@@ -10,7 +10,6 @@ type ActivityItem =
   | { type: "task"; item: Task };
 
 export default function DashboardPage() {
-  const supabase = createSupabaseClient();
   const [totalContacts, setTotalContacts] = useState<number | null>(null);
   const [totalDealValue, setTotalDealValue] = useState<number | null>(null);
   const [openTasksCount, setOpenTasksCount] = useState<number | null>(null);
@@ -20,6 +19,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const load = async () => {
+      const supabase = createSupabaseClient();
       setLoading(true);
       setError(null);
       try {
@@ -110,7 +110,7 @@ export default function DashboardPage() {
     };
 
     void load();
-  }, [supabase]);
+  }, []);
 
   return (
     <div className="space-y-6">
