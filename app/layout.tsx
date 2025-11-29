@@ -22,7 +22,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <aside className="flex w-64 flex-col border-r border-slate-200 bg-white px-4 py-6 max-md:fixed max-md:inset-y-0 max-md:z-20 max-md:w-60">
             <div className="mb-8 flex items-center justify-between">
               <span className="text-xl font-semibold tracking-tight">
-                Simple CRM
+                GrowthStack CRM
               </span>
             </div>
             <nav className="space-y-1">
