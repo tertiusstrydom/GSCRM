@@ -6,9 +6,19 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function GET(request: NextRequest) {
   try {
-    if (!supabaseServiceKey) {
+    if (!supabaseUrl) {
       return NextResponse.json(
-        { error: "SUPABASE_SERVICE_ROLE_KEY is not configured. Please add it to your .env.local file." },
+        { error: "NEXT_PUBLIC_SUPABASE_URL is not configured" },
+        { status: 500 }
+      );
+    }
+
+    if (!supabaseServiceKey) {
+      console.error("SUPABASE_SERVICE_ROLE_KEY is missing");
+      return NextResponse.json(
+        { 
+          error: "SUPABASE_SERVICE_ROLE_KEY is not configured. For local development, add it to .env.local. For production, add it to Vercel environment variables." 
+        },
         { status: 500 }
       );
     }
@@ -29,10 +39,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    if (!data || !data.users) {
+      return NextResponse.json({ users: [] });
+    }
+
     // Map users to include role
     const users = data.users.map((user) => ({
       id: user.id,
-      email: user.email,
+      email: user.email || "No email",
       role: (user.user_metadata as any)?.role || "viewer",
       created_at: user.created_at
     }));

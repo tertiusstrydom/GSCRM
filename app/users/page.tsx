@@ -40,16 +40,17 @@ export default function UsersPage() {
     setError(null);
     try {
       const res = await fetch("/api/list-users");
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error("API error:", errorText);
-        throw new Error(`Failed to load users: ${res.status} ${res.statusText}`);
-      }
       const data = await res.json();
+      
+      if (!res.ok) {
+        console.error("API error:", data);
+        throw new Error(data.error || `Failed to load users: ${res.status} ${res.statusText}`);
+      }
+      
       setUsers(data.users || []);
     } catch (err: any) {
       console.error("Error loading users:", err);
-      setError(err.message ?? "Failed to load users. Make sure SUPABASE_SERVICE_ROLE_KEY is set in .env.local");
+      setError(err.message ?? "Failed to load users. Make sure SUPABASE_SERVICE_ROLE_KEY is set in environment variables.");
     } finally {
       setLoading(false);
     }
