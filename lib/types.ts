@@ -1,9 +1,20 @@
+export type Company = {
+  id: string;
+  name: string;
+  website: string | null;
+  industry: string | null;
+  employee_count: number | null;
+  notes: string | null;
+  created_at: string | null;
+};
+
 export type Contact = {
   id: string;
   name: string;
   email: string | null;
   phone: string | null;
   company: string | null;
+  company_id: string | null;
   notes: string | null;
   created_at: string | null;
 };

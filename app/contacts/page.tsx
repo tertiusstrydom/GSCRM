@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createSupabaseClient } from "@/lib/supabase";
-import type { Contact } from "@/lib/types";
+import type { Contact, Company } from "@/lib/types";
 
 type FormState = {
   id?: string;
@@ -11,12 +11,17 @@ type FormState = {
   email: string;
   phone: string;
   company: string;
+  company_id: string;
   notes: string;
 };
 
+type ContactWithCompany = Contact & {
+  companies?: { name: string } | null;
+};
+
 export default function ContactsPage() {
-  const supabase = createSupabaseClient();
-  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contacts, setContacts] = useState<ContactWithCompany[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -25,6 +30,7 @@ export default function ContactsPage() {
     email: "",
     phone: "",
     company: "",
+    company_id: "",
     notes: ""
   });
   const [submitting, setSubmitting] = useState(false);
@@ -35,31 +41,47 @@ export default function ContactsPage() {
     return contacts.filter(
       (c) =>
         c.name.toLowerCase().includes(q) ||
-        (c.company ?? "").toLowerCase().includes(q)
+        (c.companies?.name ?? c.company ?? "").toLowerCase().includes(q)
     );
   }, [contacts, search]);
 
-  const loadContacts = async () => {
+  const loadData = async () => {
     setLoading(true);
     setError(null);
-    const { data, error } = await supabase
-      .from("contacts")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) {
-      setError(error.message);
+    const supabase = createSupabaseClient();
+    
+    const [contactsRes, companiesRes] = await Promise.all([
+      supabase
+        .from("contacts")
+        .select("*, companies(name)")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("companies")
+        .select("*")
+        .order("name", { ascending: true })
+    ]);
+
+    if (contactsRes.error) {
+      setError(contactsRes.error.message);
     } else {
-      setContacts((data ?? []) as Contact[]);
+      setContacts((contactsRes.data ?? []) as ContactWithCompany[]);
     }
+
+    if (companiesRes.error) {
+      setError(companiesRes.error.message);
+    } else {
+      setCompanies(companiesRes.data ?? []);
+    }
+
     setLoading(false);
   };
 
   useEffect(() => {
-    void loadContacts();
+    void loadData();
   }, []);
 
   const resetForm = () =>
-    setForm({ id: undefined, name: "", email: "", phone: "", company: "", notes: "" });
+    setForm({ id: undefined, name: "", email: "", phone: "", company: "", company_id: "", notes: "" });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,31 +95,29 @@ export default function ContactsPage() {
     }
     setSubmitting(true);
     setError(null);
+    const supabase = createSupabaseClient();
     try {
+      const payload: any = {
+        name: form.name.trim(),
+        email: form.email || null,
+        phone: form.phone || null,
+        company: form.company || null,
+        company_id: form.company_id || null,
+        notes: form.notes || null
+      };
+
       if (form.id) {
         const { error } = await supabase
           .from("contacts")
-          .update({
-            name: form.name.trim(),
-            email: form.email || null,
-            phone: form.phone || null,
-            company: form.company || null,
-            notes: form.notes || null
-          })
+          .update(payload)
           .eq("id", form.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("contacts").insert({
-          name: form.name.trim(),
-          email: form.email || null,
-          phone: form.phone || null,
-          company: form.company || null,
-          notes: form.notes || null
-        });
+        const { error } = await supabase.from("contacts").insert(payload);
         if (error) throw error;
       }
       resetForm();
-      await loadContacts();
+      await loadData();
     } catch (err: any) {
       setError(err.message ?? "Failed to save contact");
     } finally {
@@ -105,24 +125,26 @@ export default function ContactsPage() {
     }
   };
 
-  const handleEdit = (contact: Contact) => {
+  const handleEdit = (contact: ContactWithCompany) => {
     setForm({
       id: contact.id,
       name: contact.name,
       email: contact.email ?? "",
       phone: contact.phone ?? "",
       company: contact.company ?? "",
+      company_id: contact.company_id ?? "",
       notes: contact.notes ?? ""
     });
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this contact?")) return;
+    const supabase = createSupabaseClient();
     const { error } = await supabase.from("contacts").delete().eq("id", id);
     if (error) {
       alert(error.message);
     } else {
-      await loadContacts();
+      await loadData();
     }
   };
 
@@ -211,7 +233,7 @@ export default function ContactsPage() {
                         </Link>
                       </td>
                       <td className="px-3 py-2 text-slate-600">
-                        {contact.company || "—"}
+                        {contact.companies?.name || contact.company || "—"}
                       </td>
                       <td className="px-3 py-2 text-slate-600">
                         {contact.email || "—"}
@@ -283,13 +305,28 @@ export default function ContactsPage() {
                 <label className="block text-xs font-medium text-slate-700">
                   Company
                 </label>
-                <input
-                  type="text"
-                  value={form.company}
+                <select
+                  value={form.company_id}
                   onChange={(e) =>
-                    setForm({ ...form, company: e.target.value })
+                    setForm({ ...form, company_id: e.target.value })
                   }
                   className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                >
+                  <option value="">Select a company</option>
+                  {companies.map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  placeholder="Or enter company name manually"
+                  value={form.company}
+                  onChange={(e) =>
+                    setForm({ ...form, company: e.target.value, company_id: "" })
+                  }
+                  className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
                 />
               </div>
             </div>
