@@ -1,3 +1,29 @@
+export type Tag = {
+  id: string;
+  name: string;
+  color: string;
+  created_at: string | null;
+  user_id: string;
+};
+
+export type LifecycleStage =
+  | "lead"
+  | "marketing_qualified"
+  | "sales_qualified"
+  | "opportunity"
+  | "customer"
+  | "evangelist"
+  | "other";
+
+export type LeadSource =
+  | "website"
+  | "referral"
+  | "social_media"
+  | "cold_outreach"
+  | "event"
+  | "partner"
+  | "other";
+
 export type Company = {
   id: string;
   name: string;
@@ -6,6 +32,15 @@ export type Company = {
   employee_count: number | null;
   notes: string | null;
   created_at: string | null;
+  linkedin_url: string | null;
+  phone_number: string | null;
+  annual_revenue: number | null;
+  company_size: number | null;
+  lifecycle_stage: LifecycleStage | null;
+  lead_source: LeadSource | null;
+  last_contact_date: string | null;
+  owner: string | null;
+  user_id: string;
 };
 
 export type Contact = {
@@ -13,10 +48,17 @@ export type Contact = {
   name: string;
   email: string | null;
   phone: string | null;
+  phone_number: string | null;
   company: string | null;
   company_id: string | null;
   notes: string | null;
   created_at: string | null;
+  linkedin_url: string | null;
+  lifecycle_stage: LifecycleStage | null;
+  lead_source: LeadSource | null;
+  last_contact_date: string | null;
+  owner: string | null;
+  user_id: string;
 };
 
 export type DealStage =

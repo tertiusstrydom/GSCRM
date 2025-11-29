@@ -14,7 +14,8 @@ const navItems = [
   { href: "/companies", label: "Companies" },
   { href: "/contacts", label: "Contacts" },
   { href: "/deals", label: "Deals" },
-  { href: "/tasks", label: "Tasks" }
+  { href: "/tasks", label: "Tasks" },
+  { href: "/settings/tags", label: "Settings" }
 ];
 
 export default function RootLayout({ children }: { children: ReactNode }) {
