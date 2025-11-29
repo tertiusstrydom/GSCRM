@@ -45,38 +45,38 @@ export default function ContactsPage() {
     );
   }, [contacts, search]);
 
-  const loadData = async () => {
-    setLoading(true);
-    setError(null);
-    const supabase = createSupabaseClient();
-    
-    const [contactsRes, companiesRes] = await Promise.all([
-      supabase
-        .from("contacts")
-        .select("*, companies(name)")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("companies")
-        .select("*")
-        .order("name", { ascending: true })
-    ]);
-
-    if (contactsRes.error) {
-      setError(contactsRes.error.message);
-    } else {
-      setContacts((contactsRes.data ?? []) as ContactWithCompany[]);
-    }
-
-    if (companiesRes.error) {
-      setError(companiesRes.error.message);
-    } else {
-      setCompanies(companiesRes.data ?? []);
-    }
-
-    setLoading(false);
-  };
-
   useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      const supabase = createSupabaseClient();
+      
+      const [contactsRes, companiesRes] = await Promise.all([
+        supabase
+          .from("contacts")
+          .select("*, companies(name)")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("companies")
+          .select("*")
+          .order("name", { ascending: true })
+      ]);
+
+      if (contactsRes.error) {
+        setError(contactsRes.error.message);
+      } else {
+        setContacts((contactsRes.data ?? []) as ContactWithCompany[]);
+      }
+
+      if (companiesRes.error) {
+        setError(companiesRes.error.message);
+      } else {
+        setCompanies(companiesRes.data ?? []);
+      }
+
+      setLoading(false);
+    };
+
     void loadData();
   }, []);
 
@@ -117,7 +117,22 @@ export default function ContactsPage() {
         if (error) throw error;
       }
       resetForm();
-      await loadData();
+      // Reload data
+      setLoading(true);
+      const supabaseReload = createSupabaseClient();
+      const [contactsRes, companiesRes] = await Promise.all([
+        supabaseReload
+          .from("contacts")
+          .select("*, companies(name)")
+          .order("created_at", { ascending: false }),
+        supabaseReload
+          .from("companies")
+          .select("*")
+          .order("name", { ascending: true })
+      ]);
+      if (contactsRes.data) setContacts(contactsRes.data as ContactWithCompany[]);
+      if (companiesRes.data) setCompanies(companiesRes.data);
+      setLoading(false);
     } catch (err: any) {
       setError(err.message ?? "Failed to save contact");
     } finally {
@@ -144,7 +159,22 @@ export default function ContactsPage() {
     if (error) {
       alert(error.message);
     } else {
-      await loadData();
+      // Reload data
+      setLoading(true);
+      const supabaseReload = createSupabaseClient();
+      const [contactsRes, companiesRes] = await Promise.all([
+        supabaseReload
+          .from("contacts")
+          .select("*, companies(name)")
+          .order("created_at", { ascending: false }),
+        supabaseReload
+          .from("companies")
+          .select("*")
+          .order("name", { ascending: true })
+      ]);
+      if (contactsRes.data) setContacts(contactsRes.data as ContactWithCompany[]);
+      if (companiesRes.data) setCompanies(companiesRes.data);
+      setLoading(false);
     }
   };
 
