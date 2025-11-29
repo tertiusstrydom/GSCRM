@@ -32,8 +32,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        const role = await getUserRole();
-        setUserRole(role);
+        try {
+          const role = await getUserRole();
+          setUserRole(role);
+        } catch (error) {
+          console.error("Error fetching user role:", error);
+          setUserRole("viewer"); // Default to viewer if role fetch fails
+        }
       }
       setLoading(false);
 
@@ -51,8 +56,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        const role = await getUserRole();
-        setUserRole(role);
+        try {
+          const role = await getUserRole();
+          setUserRole(role);
+        } catch (error) {
+          console.error("Error fetching user role:", error);
+          setUserRole("viewer");
+        }
       } else {
         setUserRole(null);
       }
@@ -153,7 +163,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               )}
               <button
                 onClick={handleLogout}
-                className="w-full rounded-md px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                className="w-full rounded-md px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"    
               >
                 Logout
               </button>
@@ -167,6 +177,3 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     </html>
   );
 }
-
-
-
