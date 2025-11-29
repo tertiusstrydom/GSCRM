@@ -27,26 +27,49 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const supabase = createSupabaseClient();
+    let mounted = true;
 
     // Check initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error: sessionError }) => {
+      if (!mounted) return;
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        if (mounted) {
+          setLoading(false);
+          if (!isLoginPage) router.push("/login");
+        }
+        return;
+      }
+      
       setUser(session?.user ?? null);
       if (session?.user) {
         try {
+          // Get role from user metadata directly first (faster)
+          const roleFromMetadata = session.user.user_metadata?.role;
+          if (roleFromMetadata && mounted) {
+            setUserRole(roleFromMetadata as Role);
+          }
+          
+          // Also try the async function as fallback
           const role = await getUserRole();
-          setUserRole(role);
+          if (mounted) setUserRole(role);
         } catch (error) {
           console.error("Error fetching user role:", error);
-          setUserRole("viewer"); // Default to viewer if role fetch fails
+          // Fallback to metadata or default
+          const role = session.user.user_metadata?.role || "viewer";
+          if (mounted) setUserRole(role as Role);
         }
       }
-      setLoading(false);
-
-      // Redirect logic
-      if (!session && !isLoginPage) {
-        router.push("/login");
-      } else if (session && isLoginPage) {
-        router.push("/");
+      
+      if (mounted) {
+        setLoading(false);
+        // Redirect logic
+        if (!session && !isLoginPage) {
+          router.push("/login");
+        } else if (session && isLoginPage) {
+          router.push("/");
+        }
       }
     });
 
@@ -54,27 +77,54 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     const {
       data: { subscription }
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted) return;
+      
       setUser(session?.user ?? null);
       if (session?.user) {
         try {
+          // Get role from user metadata directly first (faster)
+          const roleFromMetadata = session.user.user_metadata?.role;
+          if (roleFromMetadata && mounted) {
+            setUserRole(roleFromMetadata as Role);
+          }
+          
+          // Also try the async function as fallback
           const role = await getUserRole();
-          setUserRole(role);
+          if (mounted) setUserRole(role);
         } catch (error) {
           console.error("Error fetching user role:", error);
-          setUserRole("viewer");
+          // Fallback to metadata or default
+          const role = session.user.user_metadata?.role || "viewer";
+          if (mounted) setUserRole(role as Role);
         }
       } else {
-        setUserRole(null);
+        if (mounted) setUserRole(null);
       }
-      if (!session && !isLoginPage) {
-        router.push("/login");
-      } else if (session && isLoginPage) {
-        router.push("/");
+      if (mounted) {
+        if (!session && !isLoginPage) {
+          router.push("/login");
+        } else if (session && isLoginPage) {
+          router.push("/");
+        }
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [pathname, router, isLoginPage]);
+
+  // Timeout for loading state
+  useEffect(() => {
+    if (loading) {
+      const timeout = setTimeout(() => {
+        console.warn("Loading timeout - forcing state update");
+        setLoading(false);
+      }, 5000); // 5 second timeout
+      return () => clearTimeout(timeout);
+    }
+  }, [loading]);
 
   const handleLogout = async () => {
     await signOut();
