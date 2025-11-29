@@ -5,7 +5,15 @@ export default {
     "./components/**/*.{js,ts,jsx,tsx}"
   ],
   theme: {
-    extend: {}
+    extend: {
+      colors: {
+        primary: {
+          DEFAULT: '#F25B45',
+          hover: '#E04A35',
+          light: '#FEE5E2',
+        }
+      }
+    }
   },
   plugins: []
 };

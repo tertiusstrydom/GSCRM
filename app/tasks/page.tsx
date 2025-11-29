@@ -176,7 +176,7 @@ export default function TasksPage() {
                 onClick={() => setFilter("open")}
                 className={`rounded-full px-3 py-1 ${
                   filter === "open"
-                    ? "bg-slate-900 text-white"
+                    ? "bg-primary text-white"
                     : "bg-slate-100 text-slate-700"
                 }`}
               >
@@ -187,7 +187,7 @@ export default function TasksPage() {
                 onClick={() => setFilter("completed")}
                 className={`rounded-full px-3 py-1 ${
                   filter === "completed"
-                    ? "bg-slate-900 text-white"
+                    ? "bg-primary text-white"
                     : "bg-slate-100 text-slate-700"
                 }`}
               >
@@ -198,7 +198,7 @@ export default function TasksPage() {
                 onClick={() => setFilter("all")}
                 className={`rounded-full px-3 py-1 ${
                   filter === "all"
-                    ? "bg-slate-900 text-white"
+                    ? "bg-primary text-white"
                     : "bg-slate-100 text-slate-700"
                 }`}
               >
@@ -356,7 +356,7 @@ export default function TasksPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex items-center justify-center rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-slate-800 disabled:opacity-60"
+                className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-primary-hover disabled:opacity-60"
               >
                 {submitting
                   ? form.id
