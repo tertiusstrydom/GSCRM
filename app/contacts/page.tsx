@@ -74,14 +74,14 @@ export default function ContactsPage() {
 
       if (contactsRes.error) {
         console.error("Contacts error:", contactsRes.error);
-        setError(contactsRes.error.message);
+        setError(contactsRes.error.message || "Failed to load contacts");
       } else {
         setContacts((contactsRes.data ?? []) as ContactWithCompany[]);
       }
 
       if (companiesRes.error) {
         console.error("Companies error:", companiesRes.error);
-        setError(companiesRes.error.message || contactsRes.error?.message);
+        setError(companiesRes.error.message || contactsRes.error?.message || "Failed to load companies");
       } else {
         setCompanies(companiesRes.data ?? []);
       }
