@@ -107,7 +107,15 @@ export default function DealsPage() {
     }
     setSubmitting(true);
     setError(null);
+    const supabase = createSupabaseClient();
     try {
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("You must be logged in");
+      }
+
       if (form.id) {
         const { error } = await supabase
           .from("deals")
@@ -117,7 +125,8 @@ export default function DealsPage() {
             stage: form.stage,
             contact_id: form.contact_id,
             close_date: form.close_date || null,
-            notes: form.notes || null
+            notes: form.notes || null,
+            user_id: user.id
           })
           .eq("id", form.id);
         if (error) throw error;
@@ -128,7 +137,8 @@ export default function DealsPage() {
           stage: form.stage,
           contact_id: form.contact_id,
           close_date: form.close_date || null,
-          notes: form.notes || null
+          notes: form.notes || null,
+          user_id: user.id
         });
         if (error) throw error;
       }

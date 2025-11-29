@@ -97,13 +97,21 @@ export default function ContactsPage() {
     setError(null);
     const supabase = createSupabaseClient();
     try {
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("You must be logged in");
+      }
+
       const payload: any = {
         name: form.name.trim(),
         email: form.email || null,
         phone: form.phone || null,
         company: form.company || null,
         company_id: form.company_id || null,
-        notes: form.notes || null
+        notes: form.notes || null,
+        user_id: user.id
       };
 
       if (form.id) {

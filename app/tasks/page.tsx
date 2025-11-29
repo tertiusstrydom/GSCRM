@@ -80,6 +80,13 @@ export default function TasksPage() {
     setSubmitting(true);
     setError(null);
     try {
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("You must be logged in");
+      }
+
       if (form.id) {
         const { error } = await supabase
           .from("tasks")
@@ -98,7 +105,8 @@ export default function TasksPage() {
           description: form.description || null,
           due_date: form.due_date || null,
           completed: form.completed,
-          contact_id: form.contact_id || null
+          contact_id: form.contact_id || null,
+          user_id: user.id
         });
         if (error) throw error;
       }

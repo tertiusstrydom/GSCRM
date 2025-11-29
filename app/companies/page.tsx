@@ -76,11 +76,19 @@ export default function CompaniesPage() {
     const supabase = createSupabaseClient();
 
     try {
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("You must be logged in");
+      }
+
       const payload: any = {
         name: form.name.trim(),
         website: form.website.trim() || null,
         industry: form.industry.trim() || null,
-        notes: form.notes.trim() || null
+        notes: form.notes.trim() || null,
+        user_id: user.id
       };
 
       if (form.employee_count.trim()) {

@@ -3,7 +3,10 @@
 import "./globals.css";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { createSupabaseClient } from "@/lib/supabase";
+import { signOut } from "@/lib/auth";
 
 const navItems = [
   { href: "/", label: "Dashboard" },
@@ -15,7 +18,73 @@ const navItems = [
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const isLoginPage = pathname === "/login";
 
+  useEffect(() => {
+    const supabase = createSupabaseClient();
+
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+
+      // Redirect logic
+      if (!session && !isLoginPage) {
+        router.push("/login");
+      } else if (session && isLoginPage) {
+        router.push("/");
+      }
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (!session && !isLoginPage) {
+        router.push("/login");
+      } else if (session && isLoginPage) {
+        router.push("/");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [pathname, router, isLoginPage]);
+
+  const handleLogout = async () => {
+    await signOut();
+    router.push("/login");
+    router.refresh();
+  };
+
+  // Show login page without sidebar
+  if (isLoginPage) {
+    return (
+      <html lang="en">
+        <body className="min-h-screen bg-slate-50 text-slate-900">
+          {children}
+        </body>
+      </html>
+    );
+  }
+
+  // Show loading state
+  if (loading) {
+    return (
+      <html lang="en">
+        <body className="min-h-screen bg-slate-50 text-slate-900">
+          <div className="flex min-h-screen items-center justify-center">
+            <p className="text-sm text-slate-500">Loading...</p>
+          </div>
+        </body>
+      </html>
+    );
+  }
+
+  // Show app with sidebar
   return (
     <html lang="en">
       <body className="min-h-screen bg-slate-50 text-slate-900">
@@ -47,6 +116,19 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 );
               })}
             </nav>
+            <div className="mt-auto pt-4">
+              {user && (
+                <div className="mb-2 px-3 py-2 text-xs text-slate-500">
+                  {user.email}
+                </div>
+              )}
+              <button
+                onClick={handleLogout}
+                className="w-full rounded-md px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+              >
+                Logout
+              </button>
+            </div>
           </aside>
           <main className="flex-1 max-md:ml-0 max-md:pt-4 md:ml-64">
             <div className="mx-auto max-w-6xl px-4 py-6">{children}</div>
