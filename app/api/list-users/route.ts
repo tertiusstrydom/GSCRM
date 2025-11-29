@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const users = data.users.map((user) => ({
       id: user.id,
       email: user.email,
-      role: user.user_metadata?.role || user.raw_user_meta_data?.role || "viewer",
+      role: (user.user_metadata as any)?.role || "viewer",
       created_at: user.created_at
     }));
 
