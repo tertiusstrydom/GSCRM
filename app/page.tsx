@@ -36,10 +36,22 @@ export default function DashboardPage() {
             .eq("completed", false)
         ]);
 
-        if (contactsCountRes.error) throw contactsCountRes.error;
-        if (companiesCountRes.error) throw companiesCountRes.error;
-        if (dealsRes.error) throw dealsRes.error;
-        if (openTasksRes.error) throw openTasksRes.error;
+        if (contactsCountRes.error) {
+          console.error("Contacts error:", contactsCountRes.error);
+          throw contactsCountRes.error;
+        }
+        if (companiesCountRes.error) {
+          console.error("Companies error:", companiesCountRes.error);
+          throw companiesCountRes.error;
+        }
+        if (dealsRes.error) {
+          console.error("Deals error:", dealsRes.error);
+          throw dealsRes.error;
+        }
+        if (openTasksRes.error) {
+          console.error("Tasks error:", openTasksRes.error);
+          throw openTasksRes.error;
+        }
 
         setTotalContacts(contactsCountRes.count ?? 0);
         setTotalCompanies(companiesCountRes.count ?? 0);

@@ -73,13 +73,15 @@ export default function ContactsPage() {
       ]);
 
       if (contactsRes.error) {
+        console.error("Contacts error:", contactsRes.error);
         setError(contactsRes.error.message);
       } else {
         setContacts((contactsRes.data ?? []) as ContactWithCompany[]);
       }
 
       if (companiesRes.error) {
-        setError(companiesRes.error.message);
+        console.error("Companies error:", companiesRes.error);
+        setError(companiesRes.error.message || contactsRes.error?.message);
       } else {
         setCompanies(companiesRes.data ?? []);
       }
