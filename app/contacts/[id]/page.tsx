@@ -8,7 +8,6 @@ import type { Contact, Deal, Task } from "@/lib/types";
 
 export default function ContactDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const supabase = createSupabaseClient();
   const [contact, setContact] = useState<Contact | null>(null);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -20,9 +19,10 @@ export default function ContactDetailPage() {
       if (!id) return;
       setLoading(true);
       setError(null);
+      const supabase = createSupabaseClient();
       try {
         const [contactRes, dealsRes, tasksRes] = await Promise.all([
-          supabase.from("contacts").select("*").eq("id", id).maybeSingle(),
+          supabase.from("contacts").select("*, companies(name)").eq("id", id).maybeSingle(),
           supabase
             .from("deals")
             .select("*")
@@ -47,7 +47,7 @@ export default function ContactDetailPage() {
       }
     };
     void load();
-  }, [id, supabase]);
+  }, [id]);
 
   return (
     <div className="space-y-4">
@@ -97,7 +97,7 @@ export default function ContactDetailPage() {
               <div>
                 <dt className="text-xs font-medium text-slate-500">Company</dt>
                 <dd className="mt-1 text-slate-800">
-                  {contact.company || "—"}
+                  {(contact as any)?.companies?.name || contact.company || "—"}
                 </dd>
               </div>
               <div>

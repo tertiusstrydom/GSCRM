@@ -11,6 +11,7 @@ type ActivityItem =
 
 export default function DashboardPage() {
   const [totalContacts, setTotalContacts] = useState<number | null>(null);
+  const [totalCompanies, setTotalCompanies] = useState<number | null>(null);
   const [totalDealValue, setTotalDealValue] = useState<number | null>(null);
   const [openTasksCount, setOpenTasksCount] = useState<number | null>(null);
   const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
@@ -23,8 +24,9 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
       try {
-        const [contactsCountRes, dealsRes, openTasksRes] = await Promise.all([
+        const [contactsCountRes, companiesCountRes, dealsRes, openTasksRes] = await Promise.all([
           supabase.from("contacts").select("id", { count: "exact", head: true }),
+          supabase.from("companies").select("id", { count: "exact", head: true }),
           supabase.from("deals").select("amount, created_at").order("created_at", {
             ascending: false
           }),
@@ -35,10 +37,12 @@ export default function DashboardPage() {
         ]);
 
         if (contactsCountRes.error) throw contactsCountRes.error;
+        if (companiesCountRes.error) throw companiesCountRes.error;
         if (dealsRes.error) throw dealsRes.error;
         if (openTasksRes.error) throw openTasksRes.error;
 
         setTotalContacts(contactsCountRes.count ?? 0);
+        setTotalCompanies(companiesCountRes.count ?? 0);
 
         const totalValue =
           dealsRes.data?.reduce((sum, d) => sum + (Number(d.amount) || 0), 0) ??
@@ -127,10 +131,15 @@ export default function DashboardPage() {
         </p>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Total Contacts"
           value={totalContacts?.toLocaleString() ?? "—"}
+          loading={loading}
+        />
+        <StatCard
+          label="Total Companies"
+          value={totalCompanies?.toLocaleString() ?? "—"}
           loading={loading}
         />
         <StatCard
