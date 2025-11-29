@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createSupabaseClient } from "@/lib/supabase";
 import { signOut } from "@/lib/auth";
-import { getUserRole, canManageUsers, type Role } from "@/lib/permissions";
+import { canManageUsers, type Role } from "@/lib/permissions";
 
 const navItems = [
   { href: "/", label: "Dashboard" },
@@ -44,22 +44,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       
       setUser(session?.user ?? null);
       if (session?.user) {
-        try {
-          // Get role from user metadata directly first (faster)
-          const roleFromMetadata = session.user.user_metadata?.role;
-          if (roleFromMetadata && mounted) {
-            setUserRole(roleFromMetadata as Role);
-          }
-          
-          // Also try the async function as fallback
-          const role = await getUserRole();
-          if (mounted) setUserRole(role);
-        } catch (error) {
-          console.error("Error fetching user role:", error);
-          // Fallback to metadata or default
-          const role = session.user.user_metadata?.role || "viewer";
-          if (mounted) setUserRole(role as Role);
-        }
+        // Get role from user metadata directly (synchronous, no async needed)
+        const role = (session.user.user_metadata as any)?.role || "viewer";
+        if (mounted) setUserRole(role as Role);
+      } else {
+        if (mounted) setUserRole(null);
       }
       
       if (mounted) {
@@ -81,22 +70,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       
       setUser(session?.user ?? null);
       if (session?.user) {
-        try {
-          // Get role from user metadata directly first (faster)
-          const roleFromMetadata = session.user.user_metadata?.role;
-          if (roleFromMetadata && mounted) {
-            setUserRole(roleFromMetadata as Role);
-          }
-          
-          // Also try the async function as fallback
-          const role = await getUserRole();
-          if (mounted) setUserRole(role);
-        } catch (error) {
-          console.error("Error fetching user role:", error);
-          // Fallback to metadata or default
-          const role = session.user.user_metadata?.role || "viewer";
-          if (mounted) setUserRole(role as Role);
-        }
+        // Get role from user metadata directly (synchronous, no async needed)
+        const role = (session.user.user_metadata as any)?.role || "viewer";
+        if (mounted) setUserRole(role as Role);
       } else {
         if (mounted) setUserRole(null);
       }

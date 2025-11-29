@@ -12,8 +12,8 @@ export async function getUserRole(): Promise<Role> {
     
     if (error || !user) return "viewer";
 
-    // Check user_metadata first (newer format)
-    const role = user.user_metadata?.role || user.user_metadata?.raw_user_meta_data?.role || "viewer";
+    // Check user_metadata for role
+    const role = (user.user_metadata as any)?.role || "viewer";
     return role as Role;
   } catch (error) {
     console.error("Error getting user role:", error);
