@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createSupabaseClient } from "@/lib/supabase";
 import type { Contact, Company } from "@/lib/types";
+import { getUserRole, canCreate, canEdit, canDelete, type Role } from "@/lib/permissions";
 
 type FormState = {
   id?: string;
@@ -34,6 +35,15 @@ export default function ContactsPage() {
     notes: ""
   });
   const [submitting, setSubmitting] = useState(false);
+  const [userRole, setUserRole] = useState<Role | null>(null);
+
+  useEffect(() => {
+    const loadRole = async () => {
+      const role = await getUserRole();
+      setUserRole(role);
+    };
+    void loadRole();
+  }, []);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -277,20 +287,24 @@ export default function ContactsPage() {
                         {contact.email || "—"}
                       </td>
                       <td className="px-3 py-2 text-right space-x-2">
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(contact)}
-                          className="text-xs font-medium text-slate-700 hover:underline"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void handleDelete(contact.id)}
-                          className="text-xs font-medium text-red-600 hover:underline"
-                        >
-                          Delete
-                        </button>
+                        {userRole && canEdit(userRole) && (
+                          <button
+                            type="button"
+                            onClick={() => handleEdit(contact)}
+                            className="text-xs font-medium text-slate-700 hover:underline"
+                          >
+                            Edit
+                          </button>
+                        )}
+                        {userRole && canDelete(userRole) && (
+                          <button
+                            type="button"
+                            onClick={() => void handleDelete(contact.id)}
+                            className="text-xs font-medium text-red-600 hover:underline"
+                          >
+                            Delete
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -300,11 +314,12 @@ export default function ContactsPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-slate-900">
-            {form.id ? "Edit contact" : "Add new contact"}
-          </h2>
-          <form onSubmit={handleSubmit} className="mt-3 space-y-3 text-sm">
+        {userRole && (canCreate(userRole) || canEdit(userRole)) && (
+          <div className="rounded-lg border border-slate-200 bg-white p-4">
+            <h2 className="text-sm font-semibold text-slate-900">
+              {form.id ? "Edit contact" : "Add new contact"}
+            </h2>
+            <form onSubmit={handleSubmit} className="mt-3 space-y-3 text-sm">
             <div>
               <label className="block text-xs font-medium text-slate-700">
                 Name *
@@ -405,6 +420,7 @@ export default function ContactsPage() {
             </div>
           </form>
         </div>
+        )}
       </section>
     </div>
   );

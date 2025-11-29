@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createSupabaseClient } from "@/lib/supabase";
 import { signOut } from "@/lib/auth";
+import { getUserRole, canManageUsers, type Role } from "@/lib/permissions";
 
 const navItems = [
   { href: "/", label: "Dashboard" },
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<Role | null>(null);
   const [loading, setLoading] = useState(true);
   const isLoginPage = pathname === "/login";
 
@@ -27,8 +29,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     const supabase = createSupabaseClient();
 
     // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        const role = await getUserRole();
+        setUserRole(role);
+      }
       setLoading(false);
 
       // Redirect logic
@@ -42,8 +48,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     // Listen for auth changes
     const {
       data: { subscription }
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        const role = await getUserRole();
+        setUserRole(role);
+      } else {
+        setUserRole(null);
+      }
       if (!session && !isLoginPage) {
         router.push("/login");
       } else if (session && isLoginPage) {
@@ -115,11 +127,28 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   </Link>
                 );
               })}
+              {userRole && canManageUsers(userRole) && (
+                <Link
+                  href="/users"
+                  className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                    pathname.startsWith("/users")
+                      ? "bg-primary text-white"
+                      : "text-slate-700 hover:bg-slate-100"
+                  }`}
+                >
+                  Users
+                </Link>
+              )}
             </nav>
             <div className="mt-auto pt-4">
               {user && (
-                <div className="mb-2 px-3 py-2 text-xs text-slate-500">
-                  {user.email}
+                <div className="mb-2 space-y-1 px-3">
+                  <div className="text-xs text-slate-500">{user.email}</div>
+                  {userRole && (
+                    <div className="text-xs font-medium text-slate-700 capitalize">
+                      Role: {userRole}
+                    </div>
+                  )}
                 </div>
               )}
               <button
