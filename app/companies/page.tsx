@@ -322,22 +322,23 @@ export default function CompaniesPage() {
             Manage your companies and their details.
           </p>
         </div>
-        <Link
-          href="/import?type=companies"
-          className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        >
-          📥 Import CSV
-        </Link>
-      </div>
-        {userRole && canCreate(userRole) && (
-          <button
-            type="button"
-            onClick={resetForm}
-            className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-hover"
+        <div className="flex gap-3">
+          <Link
+            href="/import?type=companies"
+            className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
           >
-            New company
-          </button>
-        )}
+            📥 Import CSV
+          </Link>
+          {userRole && canCreate(userRole) && (
+            <button
+              type="button"
+              onClick={resetForm}
+              className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-hover"
+            >
+              New company
+            </button>
+          )}
+        </div>
       </div>
 
       {error && (
