@@ -16,6 +16,7 @@ const navItems = [
   { href: "/deals", label: "Deals" },
   { href: "/tasks", label: "Tasks" },
   { href: "/activities", label: "Activities" },
+  { href: "/import", label: "Import Data" },
   { href: "/settings/tags", label: "Settings" }
 ];
 

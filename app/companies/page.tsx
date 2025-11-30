@@ -318,6 +318,15 @@ export default function CompaniesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Companies</h1>
+        </div>
+        <Link
+          href="/import?type=companies"
+          className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+        >
+          📥 Import CSV
+        </Link>
+      </div>
+      <div>
           <p className="mt-1 text-sm text-slate-600">
             Manage your companies and their details.
           </p>

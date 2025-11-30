@@ -352,6 +352,17 @@ export default function ContactsPage() {
             Manage your contacts and their details.
           </p>
         </div>
+        <Link
+          href="/import?type=contacts"
+          className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+        >
+          📥 Import CSV
+        </Link>
+      </div>
+          <p className="mt-1 text-sm text-slate-600">
+            Manage your contacts and their details.
+          </p>
+        </div>
         {userRole && canCreate(userRole) && (
           <button
             type="button"
