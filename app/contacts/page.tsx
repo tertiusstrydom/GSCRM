@@ -8,6 +8,12 @@ import { getUserRole, canCreate, canEdit, canDelete, type Role } from "@/lib/per
 import { TagSelector } from "@/components/TagSelector";
 import { TagBadge } from "@/components/TagBadge";
 import { LifecycleStageBadge } from "@/components/LifecycleStageBadge";
+import { ExportModal, type ExportField } from "@/components/ExportModal";
+import {
+  exportContactsToCSV,
+  generateExportFilename,
+  downloadCSVWithMetadata
+} from "@/lib/export-utils";
 
 type FormState = {
   id?: string;
@@ -76,6 +82,8 @@ export default function ContactsPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [userRole, setUserRole] = useState<Role | null>(null);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     const loadRole = async () => {
@@ -343,6 +351,51 @@ export default function ContactsPage() {
     }
   };
 
+  const exportFields: ExportField[] = [
+    { key: "name", label: "Name", essential: true },
+    { key: "email", label: "Email", essential: true },
+    { key: "phone_number", label: "Phone Number" },
+    { key: "companies.name", label: "Company Name" },
+    { key: "company", label: "Company" },
+    { key: "linkedin_url", label: "LinkedIn URL" },
+    { key: "lifecycle_stage", label: "Lifecycle Stage" },
+    { key: "lead_source", label: "Lead Source" },
+    { key: "last_contact_date", label: "Last Contact Date" },
+    { key: "notes", label: "Notes" },
+    { key: "owner", label: "Owner" },
+    { key: "tags", label: "Tags" },
+    { key: "created_at", label: "Created At" }
+  ];
+
+  const handleExport = async (selectedFields: string[], exportAll: boolean) => {
+    setIsExporting(true);
+    try {
+      const dataToExport = exportAll ? contacts : filtered;
+      const csvContent = exportContactsToCSV(dataToExport, selectedFields);
+      const filename = generateExportFilename("contacts");
+      
+      const {
+        data: { user }
+      } = await createSupabaseClient().auth.getUser();
+      downloadCSVWithMetadata(
+        csvContent,
+        filename,
+        dataToExport.length,
+        user?.email || undefined
+      );
+
+      setIsExportModalOpen(false);
+      // Show success message
+      setTimeout(() => {
+        alert(`Successfully exported ${dataToExport.length} contacts to ${filename}`);
+      }, 100);
+    } catch (error: any) {
+      alert(`Export failed: ${error.message}`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -353,6 +406,26 @@ export default function ContactsPage() {
           </p>
         </div>
         <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => setIsExportModalOpen(true)}
+            className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+          >
+            <svg
+              className="mr-2 h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              />
+            </svg>
+            Export CSV
+          </button>
           <Link
             href="/import?type=contacts"
             className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
@@ -714,6 +787,17 @@ export default function ContactsPage() {
           </div>
         )}
       </section>
+
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onExport={handleExport}
+        entityName="contacts"
+        fields={exportFields}
+        totalCount={contacts.length}
+        filteredCount={filtered.length !== contacts.length ? filtered.length : null}
+        isLoading={isExporting}
+      />
     </div>
   );
 }
