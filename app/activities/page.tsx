@@ -18,7 +18,7 @@ export default function ActivitiesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<ActivityType | "all">("all");
-  const [filterOutcome, setFilterOutcome] = useState<ActivityOutcome | "all">("all");
+  const [filterOutcome, setFilterOutcome] = useState<string>("all");
   const [filterContact, setFilterContact] = useState<string>("all");
   const [filterCompany, setFilterCompany] = useState<string>("all");
   const [filterDeal, setFilterDeal] = useState<string>("all");
@@ -286,7 +286,7 @@ export default function ActivitiesPage() {
             <select
               value={filterOutcome}
               onChange={(e) =>
-                setFilterOutcome(e.target.value as ActivityOutcome | "all")
+                setFilterOutcome(e.target.value)
               }
               className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
             >
