@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createSupabaseClient } from "@/lib/supabase";
 import type { ActivityType, ActivityOutcome, Contact, Company, Deal } from "@/lib/types";
+import { triggerWebhooks } from "@/lib/webhook-service";
 
 type ActivityModalProps = {
   isOpen: boolean;
@@ -162,14 +163,48 @@ export function ActivityModal({
       };
 
       if (activityId) {
+        // Get previous data for update webhook
+        const { data: oldData } = await supabase
+          .from("activities")
+          .select("*")
+          .eq("id", activityId)
+          .single();
+        
         const { error: err } = await supabase
           .from("activities")
           .update(activityData)
           .eq("id", activityId);
         if (err) throw err;
+        
+        // Trigger webhook for update (non-blocking)
+        try {
+          const updatedActivity = { ...oldData, ...activityData };
+          await triggerWebhooks(
+            "updated",
+            "activity",
+            activityId,
+            updatedActivity,
+            oldData
+          );
+        } catch (webhookError) {
+          console.error("Webhook error:", webhookError);
+        }
       } else {
-        const { error: err } = await supabase.from("activities").insert(activityData);
+        const { data, error: err } = await supabase
+          .from("activities")
+          .insert(activityData)
+          .select()
+          .single();
         if (err) throw err;
+        
+        // Trigger webhook for create (non-blocking)
+        if (data) {
+          try {
+            await triggerWebhooks("created", "activity", data.id, data);
+          } catch (webhookError) {
+            console.error("Webhook error:", webhookError);
+          }
+        }
       }
 
       // Update last_contact_date for contact or company if this is a call, email, or meeting

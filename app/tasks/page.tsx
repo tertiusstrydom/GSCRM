@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createSupabaseClient } from "@/lib/supabase";
 import type { Contact, Task } from "@/lib/types";
+import { triggerWebhooks } from "@/lib/webhook-service";
 
 type Filter = "all" | "open" | "completed";
 
@@ -134,21 +135,49 @@ export default function TasksPage() {
       return;
     }
 
+    // Trigger webhook for task update (non-blocking)
+    try {
+      const updatedTask = { ...task, completed: next };
+      await triggerWebhooks(
+        "updated",
+        "task",
+        task.id,
+        updatedTask,
+        task,
+        ["completed"]
+      );
+    } catch (webhookError) {
+      console.error("Webhook error:", webhookError);
+    }
+
     // Auto-create activity when task is marked complete
     if (next) {
       const {
         data: { user }
       } = await supabase.auth.getUser();
       if (user) {
-        await supabase.from("activities").insert({
-          type: "task_completed",
-          title: `Task completed: ${task.title}`,
-          description: task.description || null,
-          activity_date: new Date().toISOString(),
-          contact_id: task.contact_id,
-          created_by: user.email || "",
-          user_id: user.id
-        });
+        const { data: activityData } = await supabase
+          .from("activities")
+          .insert({
+            type: "task_completed",
+            title: `Task completed: ${task.title}`,
+            description: task.description || null,
+            activity_date: new Date().toISOString(),
+            contact_id: task.contact_id,
+            created_by: user.email || "",
+            user_id: user.id
+          })
+          .select()
+          .single();
+          
+        // Trigger webhook for activity creation (non-blocking)
+        if (activityData) {
+          try {
+            await triggerWebhooks("created", "activity", activityData.id, activityData);
+          } catch (webhookError) {
+            console.error("Webhook error:", webhookError);
+          }
+        }
       }
     }
   };

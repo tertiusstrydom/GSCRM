@@ -14,6 +14,7 @@ import {
   generateExportFilename,
   downloadCSVWithMetadata
 } from "@/lib/export-utils";
+import { triggerWebhooks } from "@/lib/webhook-service";
 
 type FormState = {
   id?: string;
@@ -228,13 +229,54 @@ export default function CompaniesPage() {
       }
 
       let companyId: string;
+      let previousData: any = null;
+      
       if (form.id) {
+        // Get previous data for update webhook
+        const { data: oldData } = await supabase
+          .from("companies")
+          .select("*")
+          .eq("id", form.id)
+          .single();
+        previousData = oldData;
+        
         const { error } = await supabase
           .from("companies")
           .update(payload)
           .eq("id", form.id);
         if (error) throw error;
         companyId = form.id;
+        
+        // Track changed fields
+        const changedFields = Object.keys(payload).filter(
+          (key) => JSON.stringify(oldData?.[key]) !== JSON.stringify(payload[key])
+        );
+        
+        // Trigger webhook for update (non-blocking)
+        try {
+          const updatedCompany = { ...oldData, ...payload };
+          await triggerWebhooks(
+            "updated",
+            "company",
+            companyId,
+            updatedCompany,
+            oldData,
+            changedFields
+          );
+          
+          // Check if lifecycle_stage changed for status_changed webhook
+          if (oldData?.lifecycle_stage !== payload.lifecycle_stage) {
+            await triggerWebhooks(
+              "status_changed",
+              "company",
+              companyId,
+              updatedCompany,
+              oldData
+            );
+          }
+        } catch (webhookError) {
+          console.error("Webhook error:", webhookError);
+        }
       } else {
         const { data, error } = await supabase
           .from("companies")
@@ -243,6 +285,13 @@ export default function CompaniesPage() {
           .single();
         if (error) throw error;
         companyId = data.id;
+        
+        // Trigger webhook for create (non-blocking)
+        try {
+          await triggerWebhooks("created", "company", companyId, data);
+        } catch (webhookError) {
+          console.error("Webhook error:", webhookError);
+        }
       }
 
       // Update tags
@@ -296,10 +345,22 @@ export default function CompaniesPage() {
     if (!confirm("Are you sure you want to delete this company?")) return;
 
     const supabase = createSupabaseClient();
+    
+    // Get company data before deletion for webhook
+    const companyData = companies.find((c) => c.id === id);
+    
     const { error } = await supabase.from("companies").delete().eq("id", id);
     if (error) {
       alert(error.message);
     } else {
+      // Trigger webhook for delete (non-blocking)
+      if (companyData) {
+        try {
+          await triggerWebhooks("deleted", "company", id, companyData);
+        } catch (webhookError) {
+          console.error("Webhook error:", webhookError);
+        }
+      }
       void loadCompanies();
     }
   };

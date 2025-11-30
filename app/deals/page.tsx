@@ -7,6 +7,7 @@ import { ActivityModal } from "@/components/ActivityModal";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { DealsAnalytics } from "@/components/DealsAnalytics";
 import { DealsFilters } from "@/components/DealsFilters";
+import { triggerWebhooks } from "@/lib/webhook-service";
 
 const STAGES: { id: DealStage; label: string }[] = [
   { id: "lead", label: "Lead" },
@@ -290,6 +291,28 @@ export default function DealsPage() {
         .eq("id", dealId);
       
       if (error) throw error;
+
+      // Trigger webhooks (non-blocking)
+      try {
+        const updatedDeal = { ...deal, stage: newStage };
+        await triggerWebhooks(
+          "stage_changed",
+          "deal",
+          dealId,
+          updatedDeal,
+          deal
+        );
+        await triggerWebhooks(
+          "updated",
+          "deal",
+          dealId,
+          updatedDeal,
+          deal,
+          ["stage"]
+        );
+      } catch (webhookError) {
+        console.error("Webhook error:", webhookError);
+      }
 
       // Auto-create activity when deal stage changes
       const {

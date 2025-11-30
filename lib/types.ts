@@ -121,5 +121,45 @@ export type Activity = {
   user_id: string | null;
 };
 
+export type WebhookEventType =
+  | "created"
+  | "updated"
+  | "deleted"
+  | "stage_changed"
+  | "tag_added"
+  | "tag_removed"
+  | "status_changed"
+  | "field_changed";
+
+export type WebhookEntityType = "contact" | "company" | "deal" | "task" | "activity";
+
+export type Webhook = {
+  id: string;
+  name: string;
+  url: string;
+  event_type: WebhookEventType;
+  entity_type: WebhookEntityType;
+  active: boolean;
+  conditions: any;
+  headers: Record<string, string> | null;
+  created_at: string;
+  last_triggered_at: string | null;
+  trigger_count: number;
+  consecutive_failures: number;
+  user_id: string;
+};
+
+export type WebhookLog = {
+  id: string;
+  webhook_id: string;
+  triggered_at: string;
+  status: "success" | "failed";
+  status_code: number | null;
+  response_body: string | null;
+  error_message: string | null;
+  payload: any;
+  user_id: string;
+};
+
 
 

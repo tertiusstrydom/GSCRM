@@ -14,6 +14,7 @@ import {
   generateExportFilename,
   downloadCSVWithMetadata
 } from "@/lib/export-utils";
+import { triggerWebhooks } from "@/lib/webhook-service";
 
 type FormState = {
   id?: string;
@@ -224,13 +225,54 @@ export default function ContactsPage() {
       };
 
       let contactId: string;
+      let previousData: any = null;
+      
       if (form.id) {
+        // Get previous data for update webhook
+        const { data: oldData } = await supabase
+          .from("contacts")
+          .select("*")
+          .eq("id", form.id)
+          .single();
+        previousData = oldData;
+        
         const { error } = await supabase
           .from("contacts")
           .update(payload)
           .eq("id", form.id);
         if (error) throw error;
         contactId = form.id;
+        
+        // Track changed fields
+        const changedFields = Object.keys(payload).filter(
+          (key) => JSON.stringify(oldData?.[key]) !== JSON.stringify(payload[key])
+        );
+        
+        // Trigger webhook for update (non-blocking)
+        try {
+          const updatedContact = { ...oldData, ...payload };
+          await triggerWebhooks(
+            "updated",
+            "contact",
+            contactId,
+            updatedContact,
+            oldData,
+            changedFields
+          );
+          
+          // Check if lifecycle_stage changed for status_changed webhook
+          if (oldData?.lifecycle_stage !== payload.lifecycle_stage) {
+            await triggerWebhooks(
+              "status_changed",
+              "contact",
+              contactId,
+              updatedContact,
+              oldData
+            );
+          }
+        } catch (webhookError) {
+          console.error("Webhook error:", webhookError);
+        }
       } else {
         const { data, error } = await supabase
           .from("contacts")
@@ -239,6 +281,13 @@ export default function ContactsPage() {
           .single();
         if (error) throw error;
         contactId = data.id;
+        
+        // Trigger webhook for create (non-blocking)
+        try {
+          await triggerWebhooks("created", "contact", contactId, data);
+        } catch (webhookError) {
+          console.error("Webhook error:", webhookError);
+        }
       }
 
       // Update tags
@@ -247,6 +296,14 @@ export default function ContactsPage() {
         .delete()
         .eq("contact_id", contactId);
       if (tagsError) throw tagsError;
+
+      // Track tag changes for webhooks
+      const oldTagIds = form.id
+        ? (contacts.find((c) => c.id === form.id)?.tags?.map((t) => t.id) || [])
+        : [];
+      const newTagIds = form.tagIds || [];
+      const addedTags = newTagIds.filter((id) => !oldTagIds.includes(id));
+      const removedTags = oldTagIds.filter((id) => !newTagIds.includes(id));
 
       if (form.tagIds.length > 0) {
         const tagInserts = form.tagIds.map((tagId) => ({
@@ -257,6 +314,29 @@ export default function ContactsPage() {
           .from("contact_tags")
           .insert(tagInserts);
         if (insertTagsError) throw insertTagsError;
+      }
+
+      // Trigger tag webhooks (non-blocking)
+      if (form.id) {
+        try {
+          const contactData = contacts.find((c) => c.id === form.id);
+          if (contactData) {
+            for (const tagId of addedTags) {
+              await triggerWebhooks("tag_added", "contact", contactId, {
+                ...contactData,
+                tag_id: tagId
+              });
+            }
+            for (const tagId of removedTags) {
+              await triggerWebhooks("tag_removed", "contact", contactId, {
+                ...contactData,
+                tag_id: tagId
+              });
+            }
+          }
+        } catch (webhookError) {
+          console.error("Webhook error:", webhookError);
+        }
       }
 
       resetForm();
@@ -317,10 +397,23 @@ export default function ContactsPage() {
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this contact?")) return;
     const supabase = createSupabaseClient();
+    
+    // Get contact data before deletion for webhook
+    const contactData = contacts.find((c) => c.id === id);
+    
     const { error } = await supabase.from("contacts").delete().eq("id", id);
     if (error) {
       alert(error.message);
     } else {
+      // Trigger webhook for delete (non-blocking)
+      if (contactData) {
+        try {
+          await triggerWebhooks("deleted", "contact", id, contactData);
+        } catch (webhookError) {
+          console.error("Webhook error:", webhookError);
+        }
+      }
+      
       // Reload data
       setLoading(true);
       const supabaseReload = createSupabaseClient();

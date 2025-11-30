@@ -18,7 +18,8 @@ const navItems = [
   { href: "/activities", label: "Activities" },
   { href: "/import", label: "Import Data" },
   { href: "/export", label: "Export Data" },
-  { href: "/settings/tags", label: "Settings" }
+  { href: "/settings/tags", label: "Settings" },
+  { href: "/settings/webhooks", label: "Webhooks" }
 ];
 
 export default function RootLayout({ children }: { children: ReactNode }) {
