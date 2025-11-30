@@ -359,10 +359,6 @@ export default function ContactsPage() {
           📥 Import CSV
         </Link>
       </div>
-          <p className="mt-1 text-sm text-slate-600">
-            Manage your contacts and their details.
-          </p>
-        </div>
         {userRole && canCreate(userRole) && (
           <button
             type="button"

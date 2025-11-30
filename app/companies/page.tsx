@@ -318,6 +318,9 @@ export default function CompaniesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Companies</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Manage your companies and their details.
+          </p>
         </div>
         <Link
           href="/import?type=companies"
@@ -326,11 +329,6 @@ export default function CompaniesPage() {
           📥 Import CSV
         </Link>
       </div>
-      <div>
-          <p className="mt-1 text-sm text-slate-600">
-            Manage your companies and their details.
-          </p>
-        </div>
         {userRole && canCreate(userRole) && (
           <button
             type="button"

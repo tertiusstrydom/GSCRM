@@ -38,7 +38,7 @@ type ImportResult = {
   }>;
 };
 
-export default function ImportPage() {
+function ImportPageContent() {
   const searchParams = useSearchParams();
   const [importType, setImportType] = useState<ImportType>("contacts");
   
