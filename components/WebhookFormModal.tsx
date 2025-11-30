@@ -201,8 +201,8 @@ export function WebhookFormModal({
       }
 
       // First save if new webhook (need ID for test)
-      let testWebhookId = webhookId;
-      if (!testWebhookId) {
+      let testWebhookId: string;
+      if (!webhookId) {
         const headersObj: Record<string, string> = {};
         headers.forEach((h) => {
           if (h.key.trim() && h.value.trim()) {
@@ -230,6 +230,8 @@ export function WebhookFormModal({
         setTimeout(() => {
           supabase.from("webhooks").delete().eq("id", testWebhookId);
         }, 1000);
+      } else {
+        testWebhookId = webhookId;
       }
 
       const result = await testWebhook(testWebhookId);
