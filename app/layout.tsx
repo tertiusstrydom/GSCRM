@@ -15,6 +15,7 @@ const navItems = [
   { href: "/contacts", label: "Contacts" },
   { href: "/deals", label: "Deals" },
   { href: "/tasks", label: "Tasks" },
+  { href: "/activities", label: "Activities" },
   { href: "/settings/tags", label: "Settings" }
 ];
 

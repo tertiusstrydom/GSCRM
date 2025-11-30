@@ -131,6 +131,25 @@ export default function TasksPage() {
     if (error) {
       alert(error.message);
       await loadData();
+      return;
+    }
+
+    // Auto-create activity when task is marked complete
+    if (next) {
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from("activities").insert({
+          type: "task_completed",
+          title: `Task completed: ${task.title}`,
+          description: task.description || null,
+          activity_date: new Date().toISOString(),
+          contact_id: task.contact_id,
+          created_by: user.email || "",
+          user_id: user.id
+        });
+      }
     }
   };
 

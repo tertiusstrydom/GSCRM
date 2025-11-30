@@ -4,13 +4,17 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { createSupabaseClient } from "@/lib/supabase";
-import type { Company, Contact, Tag } from "@/lib/types";
+import type { Company, Contact, Tag, Activity } from "@/lib/types";
 import { TagBadge } from "@/components/TagBadge";
 import { LifecycleStageBadge } from "@/components/LifecycleStageBadge";
+import { ActivityTimeline } from "@/components/ActivityTimeline";
+import { ActivityModal } from "@/components/ActivityModal";
 
 type CompanyWithTags = Company & {
   tags?: Tag[];
 };
+
+type Tab = "overview" | "activities";
 
 export default function CompanyDetailPage() {
   const params = useParams();
@@ -18,8 +22,17 @@ export default function CompanyDetailPage() {
   const id = params.id as string;
   const [company, setCompany] = useState<CompanyWithTags | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
+  const [activityStats, setActivityStats] = useState({
+    total: 0,
+    calls: 0,
+    emails: 0,
+    meetings: 0
+  });
 
   useEffect(() => {
     const load = async () => {
@@ -27,7 +40,7 @@ export default function CompanyDetailPage() {
       setError(null);
       const supabase = createSupabaseClient();
 
-      const [companyRes, contactsRes] = await Promise.all([
+      const [companyRes, contactsRes, activitiesRes] = await Promise.all([
         supabase
           .from("companies")
           .select("*, company_tags(tags(*))")
@@ -37,7 +50,12 @@ export default function CompanyDetailPage() {
           .from("contacts")
           .select("*")
           .eq("company_id", id)
-          .order("created_at", { ascending: false })
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("activities")
+          .select("*")
+          .eq("company_id", id)
+          .order("activity_date", { ascending: false })
       ]);
 
       if (companyRes.error) {
@@ -50,6 +68,10 @@ export default function CompanyDetailPage() {
         setError(contactsRes.error.message);
       }
 
+      if (activitiesRes.error) {
+        setError(contactsRes.error.message || activitiesRes.error.message);
+      }
+
       const companyData = companyRes.data ? {
         ...companyRes.data,
         tags: (companyRes.data as any).company_tags?.map((ct: any) => ct.tags).filter(Boolean) || []
@@ -57,6 +79,15 @@ export default function CompanyDetailPage() {
 
       setCompany(companyData as CompanyWithTags | null);
       setContacts(contactsRes.data ?? []);
+      const activitiesData = (activitiesRes.data ?? []) as Activity[];
+      setActivities(activitiesData);
+      
+      setActivityStats({
+        total: activitiesData.length,
+        calls: activitiesData.filter((a) => a.type === "call").length,
+        emails: activitiesData.filter((a) => a.type === "email").length,
+        meetings: activitiesData.filter((a) => a.type === "meeting").length
+      });
       setLoading(false);
     };
 
@@ -124,6 +155,37 @@ export default function CompanyDetailPage() {
         </h1>
       </div>
 
+      <div className="flex items-center gap-2 border-b border-slate-200">
+        <button
+          type="button"
+          onClick={() => setActiveTab("overview")}
+          className={`px-4 py-2 text-sm font-medium ${
+            activeTab === "overview"
+              ? "border-b-2 border-primary text-primary"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          Overview
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("activities")}
+          className={`px-4 py-2 text-sm font-medium relative ${
+            activeTab === "activities"
+              ? "border-b-2 border-primary text-primary"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          Activities
+          {activityStats.total > 0 && (
+            <span className="ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-xs">
+              {activityStats.total}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {activeTab === "overview" && (
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-4">
           <div className="rounded-lg border border-slate-200 bg-white p-6">
@@ -334,6 +396,67 @@ export default function CompanyDetailPage() {
           )}
         </div>
       </div>
+      )}
+
+      {activeTab === "activities" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-4 text-sm">
+              <div>
+                <span className="text-slate-500">Total: </span>
+                <span className="font-semibold">{activityStats.total}</span>
+              </div>
+              <div>
+                <span className="text-slate-500">Calls: </span>
+                <span className="font-semibold">{activityStats.calls}</span>
+              </div>
+              <div>
+                <span className="text-slate-500">Emails: </span>
+                <span className="font-semibold">{activityStats.emails}</span>
+              </div>
+              <div>
+                <span className="text-slate-500">Meetings: </span>
+                <span className="font-semibold">{activityStats.meetings}</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsActivityModalOpen(true)}
+              className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-hover"
+            >
+              + Log Activity
+            </button>
+          </div>
+          <ActivityTimeline activities={activities} showEntityLinks={false} />
+        </div>
+      )}
+
+      <ActivityModal
+        isOpen={isActivityModalOpen}
+        onClose={() => setIsActivityModalOpen(false)}
+        onSuccess={async () => {
+          setIsActivityModalOpen(false);
+          // Reload activities
+          const supabase = createSupabaseClient();
+          const activitiesRes = await supabase
+            .from("activities")
+            .select("*")
+            .eq("company_id", id)
+            .order("activity_date", { ascending: false });
+          if (!activitiesRes.error && activitiesRes.data) {
+            const activitiesData = activitiesRes.data as Activity[];
+            setActivities(activitiesData);
+            setActivityStats({
+              total: activitiesData.length,
+              calls: activitiesData.filter((a) => a.type === "call").length,
+              emails: activitiesData.filter((a) => a.type === "email").length,
+              meetings: activitiesData.filter((a) => a.type === "meeting").length
+            });
+          }
+        }}
+        initialCompanyId={id}
+        initialType="note"
+      />
     </div>
   );
 }

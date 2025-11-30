@@ -4,66 +4,96 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { createSupabaseClient } from "@/lib/supabase";
-import type { Contact, Deal, Task, Tag } from "@/lib/types";
+import type { Contact, Deal, Task, Tag, Activity } from "@/lib/types";
 import { TagBadge } from "@/components/TagBadge";
 import { LifecycleStageBadge } from "@/components/LifecycleStageBadge";
+import { ActivityTimeline } from "@/components/ActivityTimeline";
+import { ActivityModal } from "@/components/ActivityModal";
 
 type ContactWithCompanyAndTags = Contact & {
   companies?: { name: string } | null;
   tags?: Tag[];
 };
 
+type Tab = "overview" | "activities";
+
 export default function ContactDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [contact, setContact] = useState<ContactWithCompanyAndTags | null>(null);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
+  const [activityStats, setActivityStats] = useState({
+    total: 0,
+    calls: 0,
+    emails: 0,
+    meetings: 0
+  });
+
+  const loadData = async () => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+    const supabase = createSupabaseClient();
+    try {
+      const [contactRes, dealsRes, tasksRes, activitiesRes] = await Promise.all([
+        supabase
+          .from("contacts")
+          .select("*, companies(name), contact_tags(tags(*))")
+          .eq("id", id)
+          .maybeSingle(),
+        supabase
+          .from("deals")
+          .select("*")
+          .eq("contact_id", id)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("tasks")
+          .select("*")
+          .eq("contact_id", id)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("activities")
+          .select("*")
+          .eq("contact_id", id)
+          .order("activity_date", { ascending: false })
+      ]);
+      if (contactRes.error) throw contactRes.error;
+      if (dealsRes.error) throw dealsRes.error;
+      if (tasksRes.error) throw tasksRes.error;
+      if (activitiesRes.error) throw activitiesRes.error;
+      
+      const contactData = contactRes.data ? {
+        ...contactRes.data,
+        tags: (contactRes.data as any).contact_tags?.map((ct: any) => ct.tags).filter(Boolean) || []
+      } : null;
+      
+      setContact(contactData as ContactWithCompanyAndTags | null);
+      setDeals((dealsRes.data ?? []) as Deal[]);
+      setTasks((tasksRes.data ?? []) as Task[]);
+      const activitiesData = (activitiesRes.data ?? []) as Activity[];
+      setActivities(activitiesData);
+      
+      // Calculate activity stats
+      setActivityStats({
+        total: activitiesData.length,
+        calls: activitiesData.filter((a) => a.type === "call").length,
+        emails: activitiesData.filter((a) => a.type === "email").length,
+        meetings: activitiesData.filter((a) => a.type === "meeting").length
+      });
+    } catch (err: any) {
+      setError(err.message ?? "Failed to load contact");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      if (!id) return;
-      setLoading(true);
-      setError(null);
-      const supabase = createSupabaseClient();
-      try {
-        const [contactRes, dealsRes, tasksRes] = await Promise.all([
-          supabase
-            .from("contacts")
-            .select("*, companies(name), contact_tags(tags(*))")
-            .eq("id", id)
-            .maybeSingle(),
-          supabase
-            .from("deals")
-            .select("*")
-            .eq("contact_id", id)
-            .order("created_at", { ascending: false }),
-          supabase
-            .from("tasks")
-            .select("*")
-            .eq("contact_id", id)
-            .order("created_at", { ascending: false })
-        ]);
-        if (contactRes.error) throw contactRes.error;
-        if (dealsRes.error) throw dealsRes.error;
-        if (tasksRes.error) throw tasksRes.error;
-        
-        const contactData = contactRes.data ? {
-          ...contactRes.data,
-          tags: (contactRes.data as any).contact_tags?.map((ct: any) => ct.tags).filter(Boolean) || []
-        } : null;
-        
-        setContact(contactData as ContactWithCompanyAndTags | null);
-        setDeals((dealsRes.data ?? []) as Deal[]);
-        setTasks((tasksRes.data ?? []) as Task[]);
-      } catch (err: any) {
-        setError(err.message ?? "Failed to load contact");
-      } finally {
-        setLoading(false);
-      }
-    };
-    void load();
+    void loadData();
   }, [id]);
 
   return (
@@ -93,7 +123,39 @@ export default function ContactDetailPage() {
       ) : !contact ? (
         <p className="text-sm text-slate-500">Contact not found.</p>
       ) : (
-        <div className="grid gap-6 md:grid-cols-[3fr,2fr]">
+        <>
+          <div className="flex items-center gap-2 border-b border-slate-200">
+            <button
+              type="button"
+              onClick={() => setActiveTab("overview")}
+              className={`px-4 py-2 text-sm font-medium ${
+                activeTab === "overview"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("activities")}
+              className={`px-4 py-2 text-sm font-medium relative ${
+                activeTab === "activities"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Activities
+              {activityStats.total > 0 && (
+                <span className="ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-xs">
+                  {activityStats.total}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {activeTab === "overview" && (
+            <div className="grid gap-6 md:grid-cols-[3fr,2fr]">
           <div className="space-y-4">
             <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
               <h2 className="text-sm font-semibold text-slate-900">
@@ -292,7 +354,53 @@ export default function ContactDetailPage() {
             </div>
           </section>
         </div>
+          )}
+
+          {activeTab === "activities" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex gap-4 text-sm">
+                  <div>
+                    <span className="text-slate-500">Total: </span>
+                    <span className="font-semibold">{activityStats.total}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Calls: </span>
+                    <span className="font-semibold">{activityStats.calls}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Emails: </span>
+                    <span className="font-semibold">{activityStats.emails}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Meetings: </span>
+                    <span className="font-semibold">{activityStats.meetings}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsActivityModalOpen(true)}
+                  className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-hover"
+                >
+                  + Log Activity
+                </button>
+              </div>
+              <ActivityTimeline activities={activities} showEntityLinks={false} />
+            </div>
+          )}
+        </>
       )}
+
+      <ActivityModal
+        isOpen={isActivityModalOpen}
+        onClose={() => setIsActivityModalOpen(false)}
+        onSuccess={() => {
+          setIsActivityModalOpen(false);
+          void loadData();
+        }}
+        initialContactId={id}
+        initialType="note"
+      />
     </div>
   );
 }

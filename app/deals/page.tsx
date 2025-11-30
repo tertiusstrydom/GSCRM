@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createSupabaseClient } from "@/lib/supabase";
-import type { Contact, Deal, DealStage } from "@/lib/types";
+import type { Contact, Deal, DealStage, Activity } from "@/lib/types";
+import { ActivityModal } from "@/components/ActivityModal";
 
 const STAGES: { id: DealStage; label: string }[] = [
   { id: "lead", label: "Lead" },
@@ -39,6 +40,9 @@ export default function DealsPage() {
     notes: ""
   });
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
+  const [selectedDealForActivity, setSelectedDealForActivity] = useState<Deal | null>(null);
+  const [dealActivities, setDealActivities] = useState<Record<string, number>>({});
 
   const dealsByStage = useMemo(() => {
     const result: Record<DealStage, Deal[]> = {
@@ -58,12 +62,16 @@ export default function DealsPage() {
   const loadData = async () => {
     setLoading(true);
     setError(null);
-    const [dealsRes, contactsRes] = await Promise.all([
+    const [dealsRes, contactsRes, activitiesRes] = await Promise.all([
       supabase
         .from("deals")
         .select("*")
         .order("created_at", { ascending: false }),
-      supabase.from("contacts").select("*").order("name")
+      supabase.from("contacts").select("*").order("name"),
+      supabase
+        .from("activities")
+        .select("deal_id")
+        .not("deal_id", "is", null)
     ]);
     if (dealsRes.error) setError(dealsRes.error.message);
     else setDeals((dealsRes.data ?? []) as Deal[]);
@@ -72,6 +80,18 @@ export default function DealsPage() {
     } else {
       setContacts((contactsRes.data ?? []) as Contact[]);
     }
+    
+    // Count activities per deal
+    if (!activitiesRes.error && activitiesRes.data) {
+      const counts: Record<string, number> = {};
+      (activitiesRes.data as { deal_id: string }[]).forEach((a) => {
+        if (a.deal_id) {
+          counts[a.deal_id] = (counts[a.deal_id] || 0) + 1;
+        }
+      });
+      setDealActivities(counts);
+    }
+    
     setLoading(false);
   };
 
@@ -180,6 +200,7 @@ export default function DealsPage() {
       setDraggingId(null);
       return;
     }
+    const oldStage = updated.stage;
     setDeals((prev) =>
       prev.map((d) => (d.id === draggingId ? { ...d, stage } : d))
     );
@@ -191,6 +212,24 @@ export default function DealsPage() {
     if (error) {
       alert(error.message);
       await loadData();
+      return;
+    }
+
+    // Auto-create activity when deal stage changes
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from("activities").insert({
+        type: "note",
+        title: `Deal stage changed: ${updated.title}`,
+        description: `Stage changed from "${oldStage}" to "${stage}"`,
+        activity_date: new Date().toISOString(),
+        contact_id: updated.contact_id,
+        deal_id: updated.id,
+        created_by: user.email || "",
+        user_id: user.id
+      });
     }
   };
 
@@ -261,6 +300,17 @@ export default function DealsPage() {
                         <div className="mt-1 flex justify-end gap-2">
                           <button
                             type="button"
+                            onClick={() => {
+                              setSelectedDealForActivity(deal);
+                              setIsActivityModalOpen(true);
+                            }}
+                            className="text-[11px] font-medium text-blue-600 hover:underline"
+                            title="Log Activity"
+                          >
+                            📝 Log
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => handleEdit(deal)}
                             className="text-[11px] font-medium text-slate-700 hover:underline"
                           >
@@ -274,6 +324,11 @@ export default function DealsPage() {
                             Delete
                           </button>
                         </div>
+                        {dealActivities[deal.id] > 0 && (
+                          <div className="mt-1 text-[10px] text-slate-500">
+                            {dealActivities[deal.id]} activit{dealActivities[deal.id] === 1 ? "y" : "ies"}
+                          </div>
+                        )}
                       </article>
                     ))
                   )}
@@ -407,6 +462,22 @@ export default function DealsPage() {
           </form>
         </div>
       </section>
+
+      <ActivityModal
+        isOpen={isActivityModalOpen}
+        onClose={() => {
+          setIsActivityModalOpen(false);
+          setSelectedDealForActivity(null);
+        }}
+        onSuccess={async () => {
+          setIsActivityModalOpen(false);
+          setSelectedDealForActivity(null);
+          await loadData();
+        }}
+        initialDealId={selectedDealForActivity?.id || null}
+        initialContactId={selectedDealForActivity?.contact_id || null}
+        initialType="note"
+      />
     </div>
   );
 }
