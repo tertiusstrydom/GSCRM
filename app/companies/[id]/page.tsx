@@ -66,10 +66,14 @@ export default function CompanyDetailPage() {
 
       if (contactsRes.error) {
         setError(contactsRes.error.message);
+        setLoading(false);
+        return;
       }
 
       if (activitiesRes.error) {
-        setError(contactsRes.error.message || activitiesRes.error.message);
+        setError(activitiesRes.error.message);
+        setLoading(false);
+        return;
       }
 
       const companyData = companyRes.data ? {
