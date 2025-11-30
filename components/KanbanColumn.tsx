@@ -9,7 +9,6 @@ type KanbanColumnProps = {
   deals: Deal[];
   contacts: Contact[];
   dealActivities: Record<string, number>;
-  color: string;
   onEdit: (deal: Deal) => void;
   onDelete: (id: string) => void;
   onLogActivity: (deal: Deal) => void;
