@@ -145,9 +145,17 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <div className="flex min-h-screen">
           <aside className="flex w-64 flex-col border-r border-slate-200 bg-white px-4 py-6 max-md:fixed max-md:inset-y-0 max-md:z-20 max-md:w-60">
             <div className="mb-8 flex items-center justify-between">
-              <span className="text-xl font-semibold tracking-tight">
-                GrowthStack CRM
-              </span>
+              <Link
+                href="/"
+                className="hover:opacity-80 transition-opacity"
+                title="Go to Dashboard"
+              >
+                <img
+                  src="https://framerusercontent.com/images/oGqZOOAu1KrEicIjwg1Dsjubxo.png?width=250&height=50"
+                  alt="GrowthStack CRM"
+                  className="h-8 w-auto"
+                />
+              </Link>
             </div>
             <nav className="space-y-1">
               {navItems.map((item) => {
