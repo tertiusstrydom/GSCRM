@@ -41,6 +41,7 @@ export type Company = {
   last_contact_date: string | null;
   owner: string | null;
   user_id: string;
+  is_merged?: boolean;
 };
 
 export type Contact = {
@@ -59,6 +60,17 @@ export type Contact = {
   last_contact_date: string | null;
   owner: string | null;
   user_id: string;
+  is_merged?: boolean;
+};
+
+export type MergedRecord = {
+  id: string;
+  primary_record_id: string;
+  merged_record_id: string;
+  entity_type: "contact" | "company";
+  merged_at: string;
+  merged_by: string | null;
+  merge_metadata: Record<string, any> | null;
 };
 
 export type DealStage =

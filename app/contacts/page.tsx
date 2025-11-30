@@ -15,6 +15,13 @@ import {
   downloadCSVWithMetadata
 } from "@/lib/export-utils";
 import { triggerWebhooks } from "@/lib/webhook-service";
+import { DuplicateWarning } from "@/components/DuplicateWarning";
+import { useDebounce } from "@/hooks/useDebounce";
+import {
+  findDuplicateContactsByEmail,
+  normalizeEmail
+} from "@/lib/duplicate-utils";
+import type { Contact as ContactType } from "@/lib/types";
 
 type FormState = {
   id?: string;
@@ -85,6 +92,10 @@ export default function ContactsPage() {
   const [userRole, setUserRole] = useState<Role | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [duplicateContact, setDuplicateContact] = useState<ContactType | null>(null);
+  const [checkingDuplicate, setCheckingDuplicate] = useState(false);
+  const [ignoreDuplicate, setIgnoreDuplicate] = useState(false);
+  const debouncedEmail = useDebounce(form.email, 500);
 
   useEffect(() => {
     const loadRole = async () => {
@@ -93,6 +104,33 @@ export default function ContactsPage() {
     };
     void loadRole();
   }, []);
+
+  // Check for duplicate contacts by email
+  useEffect(() => {
+    const checkDuplicate = async () => {
+      if (!debouncedEmail || ignoreDuplicate || !debouncedEmail.includes("@")) {
+        setDuplicateContact(null);
+        return;
+      }
+
+      setCheckingDuplicate(true);
+      const duplicates = await findDuplicateContactsByEmail(debouncedEmail, form.id);
+      setCheckingDuplicate(false);
+
+      if (duplicates.length > 0) {
+        setDuplicateContact(duplicates[0]);
+      } else {
+        setDuplicateContact(null);
+      }
+    };
+
+    void checkDuplicate();
+  }, [debouncedEmail, form.id, ignoreDuplicate]);
+
+  // Reset ignore flag when email changes
+  useEffect(() => {
+    setIgnoreDuplicate(false);
+  }, [form.email]);
 
   const filtered = useMemo(() => {
     let result = contacts;
@@ -169,7 +207,7 @@ export default function ContactsPage() {
     void loadData();
   }, []);
 
-  const resetForm = () =>
+  const resetForm = () => {
     setForm({
       id: undefined,
       name: "",
@@ -186,6 +224,9 @@ export default function ContactsPage() {
       owner: "",
       tagIds: []
     });
+    setDuplicateContact(null);
+    setIgnoreDuplicate(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,6 +237,16 @@ export default function ContactsPage() {
     if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) {
       alert("Please enter a valid email");
       return;
+    }
+
+    // Final duplicate check before submission
+    if (form.email && !ignoreDuplicate) {
+      const duplicates = await findDuplicateContactsByEmail(form.email, form.id);
+      if (duplicates.length > 0) {
+        setDuplicateContact(duplicates[0]);
+        alert("A contact with this email already exists. Please review the duplicate warning or click 'Create anyway' to proceed.");
+        return;
+      }
     }
     setSubmitting(true);
     setError(null);
@@ -718,6 +769,22 @@ export default function ContactsPage() {
                   />
                 </div>
               </div>
+
+              {duplicateContact && !ignoreDuplicate && (
+                <DuplicateWarning
+                  show={true}
+                  checking={checkingDuplicate}
+                  message={`A contact with this email already exists: ${duplicateContact.name}`}
+                  duplicateRecord={{
+                    id: duplicateContact.id,
+                    name: duplicateContact.name,
+                    entityType: "contact",
+                    companyName: (duplicateContact as ContactWithCompany).companies?.name || duplicateContact.company || undefined
+                  }}
+                  onProceed={() => setIgnoreDuplicate(true)}
+                  onDismiss={() => setDuplicateContact(null)}
+                />
+              )}
 
               <div>
                 <label className="block text-xs font-medium text-slate-700">

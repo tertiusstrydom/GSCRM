@@ -18,6 +18,7 @@ const navItems = [
   { href: "/activities", label: "Activities" },
   { href: "/import", label: "Import Data" },
   { href: "/export", label: "Export Data" },
+  { href: "/tools/duplicates", label: "Find Duplicates" },
   { href: "/settings/tags", label: "Settings" },
   { href: "/settings/webhooks", label: "Webhooks" }
 ];

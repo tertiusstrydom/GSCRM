@@ -15,6 +15,16 @@ import {
   downloadCSVWithMetadata
 } from "@/lib/export-utils";
 import { triggerWebhooks } from "@/lib/webhook-service";
+import { DuplicateWarning } from "@/components/DuplicateWarning";
+import { useDebounce } from "@/hooks/useDebounce";
+import {
+  findDuplicateCompaniesByName,
+  findDuplicateCompaniesByWebsite,
+  findSimilarCompanies,
+  normalizeName,
+  normalizeWebsite
+} from "@/lib/duplicate-utils";
+import type { Company as CompanyType } from "@/lib/types";
 
 type FormState = {
   id?: string;
@@ -85,6 +95,12 @@ export default function CompaniesPage() {
   const [userRole, setUserRole] = useState<Role | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [duplicateCompany, setDuplicateCompany] = useState<CompanyType | null>(null);
+  const [similarCompanies, setSimilarCompanies] = useState<Array<{ company: CompanyType; similarity: number }>>([]);
+  const [checkingDuplicate, setCheckingDuplicate] = useState(false);
+  const [ignoreDuplicate, setIgnoreDuplicate] = useState(false);
+  const debouncedName = useDebounce(form.name, 500);
+  const debouncedWebsite = useDebounce(form.website, 500);
 
   useEffect(() => {
     const loadRole = async () => {
@@ -93,6 +109,42 @@ export default function CompaniesPage() {
     };
     void loadRole();
   }, []);
+
+  // Check for duplicate companies by name
+  useEffect(() => {
+    const checkDuplicate = async () => {
+      if (!debouncedName || ignoreDuplicate || debouncedName.trim().length < 3) {
+        setDuplicateCompany(null);
+        setSimilarCompanies([]);
+        return;
+      }
+
+      setCheckingDuplicate(true);
+      const nameDups = await findDuplicateCompaniesByName(debouncedName, form.id);
+      const websiteDups = form.website
+        ? await findDuplicateCompaniesByWebsite(form.website, form.id)
+        : [];
+      const similar = await findSimilarCompanies(debouncedName, 0.8, form.id);
+      setCheckingDuplicate(false);
+
+      if (nameDups.length > 0) {
+        setDuplicateCompany(nameDups[0]);
+      } else if (websiteDups.length > 0) {
+        setDuplicateCompany(websiteDups[0]);
+      } else {
+        setDuplicateCompany(null);
+      }
+
+      setSimilarCompanies(similar.slice(0, 3)); // Show top 3 similar
+    };
+
+    void checkDuplicate();
+  }, [debouncedName, debouncedWebsite, form.id, form.website, ignoreDuplicate]);
+
+  // Reset ignore flag when name/website changes
+  useEffect(() => {
+    setIgnoreDuplicate(false);
+  }, [form.name, form.website]);
 
   const filtered = useMemo(() => {
     let result = companies;
@@ -157,6 +209,7 @@ export default function CompaniesPage() {
 
   const resetForm = () => {
     setForm({
+      id: undefined,
       name: "",
       website: "",
       industry: "",
@@ -172,6 +225,9 @@ export default function CompaniesPage() {
       owner: "",
       tagIds: []
     });
+    setDuplicateCompany(null);
+    setSimilarCompanies([]);
+    setIgnoreDuplicate(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -179,6 +235,25 @@ export default function CompaniesPage() {
     if (!form.name.trim()) {
       alert("Company name is required");
       return;
+    }
+
+    // Final duplicate check before submission
+    if (!ignoreDuplicate) {
+      const nameDups = await findDuplicateCompaniesByName(form.name, form.id);
+      const websiteDups = form.website
+        ? await findDuplicateCompaniesByWebsite(form.website, form.id)
+        : [];
+      
+      if (nameDups.length > 0) {
+        setDuplicateCompany(nameDups[0]);
+        alert("A company with this name already exists. Please review the duplicate warning or click 'Create anyway' to proceed.");
+        return;
+      }
+      if (websiteDups.length > 0) {
+        setDuplicateCompany(websiteDups[0]);
+        alert("A company with this website already exists. Please review the duplicate warning or click 'Create anyway' to proceed.");
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -629,6 +704,61 @@ export default function CompaniesPage() {
                   className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
+
+              {duplicateCompany && !ignoreDuplicate && (
+                <DuplicateWarning
+                  show={true}
+                  checking={checkingDuplicate}
+                  message={`A company with this ${normalizeName(duplicateCompany.name) === normalizeName(form.name) ? "name" : "website"} already exists: ${duplicateCompany.name}`}
+                  duplicateRecord={{
+                    id: duplicateCompany.id,
+                    name: duplicateCompany.name,
+                    entityType: "company"
+                  }}
+                  onProceed={() => setIgnoreDuplicate(true)}
+                  onDismiss={() => setDuplicateCompany(null)}
+                />
+              )}
+
+              {similarCompanies.length > 0 && !duplicateCompany && !ignoreDuplicate && (
+                <div className="rounded-md bg-blue-50 border border-blue-200 p-4">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <svg
+                        className="h-5 w-5 text-blue-400"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                    <div className="ml-3 flex-1">
+                      <h3 className="text-sm font-medium text-blue-800">
+                        Similar companies found
+                      </h3>
+                      <div className="mt-2 text-sm text-blue-700">
+                        <ul className="list-disc list-inside space-y-1">
+                          {similarCompanies.map(({ company, similarity }) => (
+                            <li key={company.id}>
+                              <Link
+                                href={`/companies/${company.id}`}
+                                className="underline hover:text-blue-900"
+                              >
+                                {company.name}
+                              </Link>{" "}
+                              ({Math.round(similarity * 100)}% similar)
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
