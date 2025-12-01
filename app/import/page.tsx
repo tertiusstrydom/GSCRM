@@ -396,7 +396,9 @@ function ImportPageContent() {
             reason: error.message || "Import failed"
           });
           result.skipped++;
-          result.success--;
+          if (result.success > 0) {
+            result.success--;
+          }
         });
       }
 
@@ -873,33 +875,6 @@ function ImportPageContent() {
                       ))}
                     </tbody>
                   </table>
-                </div>
-                        <th className="px-3 py-2 text-left font-semibold text-slate-700">
-                          Row
-                        </th>
-                        <th className="px-3 py-2 text-left font-semibold text-slate-700">
-                          Reason
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 bg-white">
-                      {importResult.errors.slice(0, 10).map((error, idx) => (
-                        <tr key={idx}>
-                          <td className="px-3 py-2 text-slate-900">
-                            {error.row}
-                          </td>
-                          <td className="px-3 py-2 text-red-600">
-                            {error.reason}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {importResult.errors.length > 10 && (
-                    <p className="p-3 text-xs text-slate-500">
-                      Showing first 10 errors. Download error log to see all.
-                    </p>
-                  )}
                 </div>
               </div>
             )}
