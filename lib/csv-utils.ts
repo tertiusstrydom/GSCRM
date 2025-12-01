@@ -9,6 +9,9 @@ export type ContactField =
   | "email"
   | "phone_number"
   | "company"
+  | "job_title"
+  | "company_website"
+  | "company_headcount"
   | "linkedin_url"
   | "lifecycle_stage"
   | "lead_source"
@@ -41,6 +44,9 @@ export const CONTACT_FIELDS: {
   { field: "email", label: "Email", required: false },
   { field: "phone_number", label: "Phone Number", required: false },
   { field: "company", label: "Company", required: false },
+  { field: "job_title", label: "Job Title", required: false },
+  { field: "company_website", label: "Company Website", required: false },
+  { field: "company_headcount", label: "Company Headcount", required: false },
   { field: "linkedin_url", label: "LinkedIn URL", required: false },
   {
     field: "lifecycle_stage",
@@ -117,33 +123,52 @@ export function autoMapFields(
       }
     }
 
-    // Common aliases
+    // Common aliases - case-insensitive matching
     const aliases: Record<string, string> = {
       email: "email",
+      emailaddress: "email",
       phone: "phone_number",
       phonenumber: "phone_number",
+      phone_number: "phone_number",
       mobile: "phone_number",
       firstname: "first_name",
+      first_name: "first_name",
       first: "first_name",
       fname: "first_name",
       lastname: "last_name",
+      last_name: "last_name",
       last: "last_name",
       lname: "last_name",
       name: "name", // Legacy support
       fullname: "name", // Legacy support
       companyname: "company",
+      company_name: "company",
       company: "company",
+      jobtitle: "job_title",
+      job_title: "job_title",
+      title: "job_title",
+      position: "job_title",
+      companywebsite: "company_website",
+      company_website: "company_website",
+      website: "company_website",
+      url: "company_website",
+      companyurl: "company_website",
+      company_headcount: "company_headcount",
+      headcount: "company_headcount",
+      employees: "company_headcount",
+      companysize: "company_headcount",
+      company_size: "company_headcount",
+      numofemployees: "company_headcount",
+      employee_count: "company_headcount",
       linkedin: "linkedin_url",
       linkedinurl: "linkedin_url",
-      website: "website",
-      url: "website",
+      linkedin_url: "linkedin_url",
       industry: "industry",
-      employees: "employee_count",
-      employeecount: "employee_count",
       revenue: "annual_revenue",
       annualrevenue: "annual_revenue",
+      annual_revenue: "annual_revenue",
       size: "company_size",
-      companysize: "company_size"
+      companysize_company: "company_size"
     };
 
     if (aliases[normalizedHeader]) {

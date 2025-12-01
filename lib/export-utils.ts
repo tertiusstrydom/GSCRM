@@ -199,6 +199,9 @@ export function exportContactsToCSV(
     { key: "phone_number", label: "Phone Number" },
     { key: "companies.name", label: "Company Name" },
     { key: "company", label: "Company" },
+    { key: "job_title", label: "Job Title" },
+    { key: "company_website", label: "Company Website" },
+    { key: "company_headcount", label: "Company Headcount" },
     { key: "linkedin_url", label: "LinkedIn URL" },
     {
       key: "lifecycle_stage",

@@ -108,7 +108,18 @@ export default function ContactDetailPage() {
             / Details
           </p>
           <h1 className="mt-1 text-xl font-semibold tracking-tight">
-            {contact ? getContactFullName(contact) : "Contact"}
+            {contact ? (
+              <>
+                {getContactFullName(contact)}
+                {contact.job_title && (
+                  <span className="ml-2 text-base font-normal text-slate-500">
+                    {contact.job_title}
+                  </span>
+                )}
+              </>
+            ) : (
+              "Contact"
+            )}
           </h1>
         </div>
       </div>
@@ -190,6 +201,36 @@ export default function ContactDetailPage() {
                     {contact.companies?.name || contact.company || "—"}
                   </dd>
                 </div>
+                {contact.job_title && (
+                  <div>
+                    <dt className="text-xs font-medium text-slate-500">Job Title</dt>
+                    <dd className="mt-1 text-slate-800">{contact.job_title}</dd>
+                  </div>
+                )}
+                {contact.company_website && (
+                  <div>
+                    <dt className="text-xs font-medium text-slate-500">Company Website</dt>
+                    <dd className="mt-1 text-slate-800">
+                      <a
+                        href={contact.company_website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline inline-flex items-center gap-1"
+                      >
+                        {contact.company_website}
+                        <span>↗</span>
+                      </a>
+                    </dd>
+                  </div>
+                )}
+                {contact.company_headcount && (
+                  <div>
+                    <dt className="text-xs font-medium text-slate-500">Company Headcount</dt>
+                    <dd className="mt-1 text-slate-800">
+                      {contact.company_headcount.toLocaleString()} employees
+                    </dd>
+                  </div>
+                )}
                 <div>
                   <dt className="text-xs font-medium text-slate-500">LinkedIn</dt>
                   <dd className="mt-1 text-slate-800">

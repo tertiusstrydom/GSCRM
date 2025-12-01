@@ -33,6 +33,9 @@ type FormState = {
   phone_number: string;
   company: string;
   company_id: string;
+  job_title: string;
+  company_website: string;
+  company_headcount: string;
   notes: string;
   linkedin_url: string;
   lifecycle_stage: LifecycleStage | "";
@@ -222,6 +225,9 @@ export default function ContactsPage() {
       phone_number: "",
       company: "",
       company_id: "",
+      job_title: "",
+      company_website: "",
+      company_headcount: "",
       notes: "",
       linkedin_url: "",
       lifecycle_stage: "",
@@ -443,6 +449,9 @@ export default function ContactsPage() {
       phone_number: contact.phone_number ?? "",
       company: contact.company ?? "",
       company_id: contact.company_id ?? "",
+      job_title: contact.job_title ?? "",
+      company_website: contact.company_website ?? "",
+      company_headcount: contact.company_headcount?.toString() ?? "",
       notes: contact.notes ?? "",
       linkedin_url: contact.linkedin_url ?? "",
       lifecycle_stage: contact.lifecycle_stage ?? "",
@@ -675,6 +684,11 @@ export default function ContactsPage() {
                           className="font-medium text-slate-900 hover:underline"
                         >
                           {getContactFullName(contact)}
+                          {contact.job_title && (
+                            <span className="ml-2 text-xs font-normal text-slate-500">
+                              {contact.job_title}
+                            </span>
+                          )}
                         </Link>
                         {contact.linkedin_url && (
                           <a
@@ -809,33 +823,78 @@ export default function ContactsPage() {
                 />
               )}
 
-              <div>
-                <label className="block text-xs font-medium text-slate-700">
-                  Company
-                </label>
-                <select
-                  value={form.company_id}
-                  onChange={(e) =>
-                    setForm({ ...form, company_id: e.target.value, company: "" })
-                  }
-                  className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option value="">Select a company</option>
-                  {companies.map((company) => (
-                    <option key={company.id} value={company.id}>
-                      {company.name}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  placeholder="Or enter company name manually"
-                  value={form.company}
-                  onChange={(e) =>
-                    setForm({ ...form, company: e.target.value, company_id: "" })
-                  }
-                  className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                />
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700">
+                    Company
+                  </label>
+                  <select
+                    value={form.company_id}
+                    onChange={(e) =>
+                      setForm({ ...form, company_id: e.target.value, company: "" })
+                    }
+                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="">Select a company</option>
+                    {companies.map((company) => (
+                      <option key={company.id} value={company.id}>
+                        {company.name}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Or enter company name manually"
+                    value={form.company}
+                    onChange={(e) =>
+                      setForm({ ...form, company: e.target.value, company_id: "" })
+                    }
+                    className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700">
+                    Job Title
+                  </label>
+                  <input
+                    type="text"
+                    value={form.job_title}
+                    onChange={(e) => setForm({ ...form, job_title: e.target.value })}
+                    placeholder="e.g., VP of Sales, Marketing Manager"
+                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700">
+                    Company Website
+                  </label>
+                  <input
+                    type="url"
+                    value={form.company_website}
+                    onChange={(e) => {
+                      let value = e.target.value.trim();
+                      if (value && !value.startsWith("http://") && !value.startsWith("https://")) {
+                        value = `https://${value}`;
+                      }
+                      setForm({ ...form, company_website: value });
+                    }}
+                    placeholder="https://company.com"
+                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700">
+                    Company Headcount
+                  </label>
+                  <input
+                    type="number"
+                    value={form.company_headcount}
+                    onChange={(e) => setForm({ ...form, company_headcount: e.target.value })}
+                    placeholder="e.g., 50, 500, 1000"
+                    min="0"
+                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

@@ -53,6 +53,9 @@ export type Contact = {
   phone_number: string | null;
   company: string | null;
   company_id: string | null;
+  job_title: string | null;
+  company_website: string | null;
+  company_headcount: number | null;
   notes: string | null;
   created_at: string | null;
   linkedin_url: string | null;

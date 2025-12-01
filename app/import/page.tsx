@@ -182,46 +182,28 @@ function ImportPageContent() {
       let shouldSkip = false;
       let skipReason = "";
 
-      // Check required fields
-      for (const requiredField of requiredFields) {
-        const csvHeader = Object.keys(mapping).find(
-          (h) => mapping[h] === requiredField
-        );
-        if (csvHeader && !row[csvHeader]?.trim()) {
-          if (importOptions.skipMissingRequired) {
-            shouldSkip = true;
-            skipReason = `Missing required field: ${requiredField}`;
-            break;
-          }
-        }
-      }
-
-      if (shouldSkip) {
-        result.skipped++;
-        errors.push({
-          row: i + 2, // +2 because row 1 is header, row numbers start at 1
-          data: row,
-          reason: skipReason
-        });
-        continue;
-      }
-
-      // Map all fields
+      // Map all fields FIRST
       Object.keys(mapping).forEach((csvHeader) => {
         const field = mapping[csvHeader];
         if (!field) return; // Skip unmapped columns
 
-        let value: any = row[csvHeader]?.trim() || null;
+        let value: any = row[csvHeader];
+        if (value !== null && value !== undefined) {
+          value = String(value).trim();
+        }
+        if (!value || value === "") {
+          value = null;
+        }
 
         // Validate and transform values
         if (field === "email" && value && !isValidEmail(value)) {
           shouldSkip = true;
-          skipReason = "Invalid email format";
+          skipReason = `Row ${i + 2}: Invalid email format`;
           return;
         }
 
         if (
-          (field === "website" || field === "linkedin_url") &&
+          (field === "website" || field === "linkedin_url" || field === "company_website") &&
           value &&
           !isValidUrl(value)
         ) {
@@ -230,7 +212,7 @@ function ImportPageContent() {
 
         // Convert numeric fields
         if (
-          ["employee_count", "annual_revenue", "company_size"].includes(
+          ["employee_count", "annual_revenue", "company_size", "company_headcount"].includes(
             field
           ) &&
           value
@@ -251,10 +233,22 @@ function ImportPageContent() {
         delete rowData.name;
       }
 
-      // Ensure first_name is set (required field)
-      if (importType === "contacts" && !rowData.first_name) {
-        shouldSkip = true;
-        skipReason = "Missing required field: first_name";
+      // Validate required fields AFTER mapping
+      if (importOptions.skipMissingRequired) {
+        for (const requiredField of requiredFields) {
+          const value = rowData[requiredField];
+          if (!value || (typeof value === "string" && value.trim() === "")) {
+            shouldSkip = true;
+            skipReason = `Row ${i + 2}: Missing required field '${requiredField}'`;
+            console.log(`Validation failed for row ${i + 2}:`, {
+              requiredField,
+              value,
+              rowData,
+              mapping
+            });
+            break;
+          }
+        }
       }
 
       if (shouldSkip) {
