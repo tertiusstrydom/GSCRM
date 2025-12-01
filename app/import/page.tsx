@@ -690,12 +690,11 @@ function ImportPageContent() {
             </div>
 
             {/* Validation Summary */}
-            {(() => {
+            {csvData.length > 0 && (() => {
               const previewRows = csvData.slice(0, 5);
               const validations = previewRows.map((row, idx) => validatePreviewRow(row, idx));
               const validCount = validations.filter((v) => v.valid).length;
               const invalidCount = validations.filter((v) => !v.valid).length;
-              const totalValid = csvData.length; // We'll estimate based on preview
               
               return (
                 <div className="mt-6 space-y-4">
