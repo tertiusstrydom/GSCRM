@@ -146,6 +146,50 @@ function ImportPageContent() {
     setStep("preview");
   };
 
+  // Validate preview rows
+  const validatePreviewRow = (row: CSVRow, rowIndex: number): { valid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    const rowData: any = {};
+
+    // Map fields
+    Object.keys(mapping).forEach((csvHeader) => {
+      const field = mapping[csvHeader];
+      if (!field) return;
+      let value: any = row[csvHeader];
+      if (value !== null && value !== undefined) {
+        value = String(value).trim();
+      }
+      if (!value || value === "") {
+        value = null;
+      }
+      rowData[field] = value || null;
+    });
+
+    // Handle legacy name field
+    if (importType === "contacts" && rowData.name && !rowData.first_name) {
+      const { first_name, last_name } = splitFullName(rowData.name);
+      rowData.first_name = first_name;
+      rowData.last_name = last_name || null;
+      delete rowData.name;
+    }
+
+    // Check required fields
+    const requiredFields = availableFields.filter((f) => f.required).map((f) => f.field);
+    for (const requiredField of requiredFields) {
+      const value = rowData[requiredField];
+      if (!value || (typeof value === "string" && value.trim() === "")) {
+        errors.push(`Missing required field: ${requiredField}`);
+      }
+    }
+
+    // Validate email format if present
+    if (rowData.email && !isValidEmail(rowData.email)) {
+      errors.push("Invalid email format");
+    }
+
+    return { valid: errors.length === 0, errors };
+  };
+
   const handleImport = async () => {
     setIsImporting(true);
     setStep("importing");
@@ -631,13 +675,60 @@ function ImportPageContent() {
               )}
             </div>
 
-            <div className="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
-              <p className="text-sm font-medium text-blue-900">Ready to import</p>
-              <p className="mt-1 text-sm text-blue-800">
-                {csvData.length} {importType} will be imported
-                {importOptions.skipMissingRequired && " (rows with missing required fields will be skipped)"}
-              </p>
-            </div>
+            {/* Validation Summary */}
+            {(() => {
+              const previewRows = csvData.slice(0, 5);
+              const validations = previewRows.map((row, idx) => validatePreviewRow(row, idx));
+              const validCount = validations.filter((v) => v.valid).length;
+              const invalidCount = validations.filter((v) => !v.valid).length;
+              const totalValid = csvData.length; // We'll estimate based on preview
+              
+              return (
+                <div className="mt-6 space-y-4">
+                  <div className="rounded-lg border border-slate-200 bg-white p-4">
+                    <h3 className="mb-3 text-sm font-semibold text-slate-900">Preview Validation (first 5 rows)</h3>
+                    <div className="space-y-2">
+                      {previewRows.map((row, idx) => {
+                        const validation = validations[idx];
+                        return (
+                          <div
+                            key={idx}
+                            className={`rounded-md border px-3 py-2 text-xs ${
+                              validation.valid
+                                ? "border-green-200 bg-green-50"
+                                : "border-red-200 bg-red-50"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">
+                                Row {idx + 2}: {validation.valid ? "✓ Valid" : "✗ Invalid"}
+                              </span>
+                            </div>
+                            {validation.errors.length > 0 && (
+                              <ul className="mt-1 list-disc pl-4 text-red-700">
+                                {validation.errors.map((error, errIdx) => (
+                                  <li key={errIdx}>{error}</li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-3 text-xs text-slate-600">
+                      Preview: {validCount} valid, {invalidCount} invalid
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                    <p className="text-sm font-medium text-blue-900">Ready to import</p>
+                    <p className="mt-1 text-sm text-blue-800">
+                      {csvData.length} {importType} will be imported
+                      {importOptions.skipMissingRequired && " (rows with missing required fields will be skipped)"}
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="mt-6 flex justify-end gap-3">
               <button
