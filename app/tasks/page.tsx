@@ -203,8 +203,10 @@ export default function TasksPage() {
     }
   };
 
-  const contactName = (contactId: string | null) =>
-    contacts.find((c) => c.id === contactId)?.name ?? "—";
+  const contactName = (contactId: string | null) => {
+    const contact = contacts.find((c) => c.id === contactId);
+    return contact ? `${contact.first_name}${contact.last_name ? ` ${contact.last_name}` : ""}` : "—";
+  };
 
   return (
     <div className="space-y-6">

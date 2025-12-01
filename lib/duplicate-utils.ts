@@ -335,3 +335,4 @@ export async function findFuzzyCompanyMatches(
 
   return matches.sort((a, b) => b.similarity - a.similarity);
 }
+

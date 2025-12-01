@@ -46,7 +46,8 @@ export type Company = {
 
 export type Contact = {
   id: string;
-  name: string;
+  first_name: string;
+  last_name: string | null;
   email: string | null;
   phone: string | null;
   phone_number: string | null;
@@ -61,6 +62,8 @@ export type Contact = {
   owner: string | null;
   user_id: string;
   is_merged?: boolean;
+  // Computed property helper (not stored in DB)
+  name?: string; // For backward compatibility, computed as first_name + last_name
 };
 
 export type MergedRecord = {

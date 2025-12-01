@@ -16,6 +16,7 @@ import {
   downloadCSV,
   type CSVRow
 } from "@/lib/csv-utils";
+import { splitFullName } from "@/lib/contact-utils";
 import { CSVFileUpload } from "@/components/CSVFileUpload";
 import { FieldMapping } from "@/components/FieldMapping";
 
@@ -240,6 +241,21 @@ function ImportPageContent() {
 
         rowData[field] = value || null;
       });
+
+      // Handle legacy "name" field - split into first_name and last_name
+      if (importType === "contacts" && rowData.name && !rowData.first_name) {
+        const { first_name, last_name } = splitFullName(rowData.name);
+        rowData.first_name = first_name;
+        rowData.last_name = last_name || null;
+        // Remove the legacy name field
+        delete rowData.name;
+      }
+
+      // Ensure first_name is set (required field)
+      if (importType === "contacts" && !rowData.first_name) {
+        shouldSkip = true;
+        skipReason = "Missing required field: first_name";
+      }
 
       if (shouldSkip) {
         result.skipped++;

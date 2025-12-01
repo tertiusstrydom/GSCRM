@@ -388,7 +388,7 @@ export default function CompanyDetailPage() {
                     className="block rounded-md px-3 py-2 text-sm hover:bg-slate-50"
                   >
                     <p className="font-medium text-slate-900">
-                      {contact.name}
+                      {contact.first_name}{contact.last_name ? ` ${contact.last_name}` : ""}
                     </p>
                     {contact.email && (
                       <p className="text-xs text-slate-500">{contact.email}</p>

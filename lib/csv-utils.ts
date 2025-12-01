@@ -3,7 +3,9 @@
 export type CSVRow = Record<string, string>;
 
 export type ContactField =
-  | "name"
+  | "first_name"
+  | "last_name"
+  | "name" // Legacy support - will be split into first_name/last_name
   | "email"
   | "phone_number"
   | "company"
@@ -33,7 +35,9 @@ export const CONTACT_FIELDS: {
   required: boolean;
   description?: string;
 }[] = [
-  { field: "name", label: "Name", required: true },
+  { field: "first_name", label: "First Name", required: true },
+  { field: "last_name", label: "Last Name", required: false },
+  { field: "name", label: "Name (Legacy - will be split)", required: false },
   { field: "email", label: "Email", required: false },
   { field: "phone_number", label: "Phone Number", required: false },
   { field: "company", label: "Company", required: false },
@@ -119,6 +123,14 @@ export function autoMapFields(
       phone: "phone_number",
       phonenumber: "phone_number",
       mobile: "phone_number",
+      firstname: "first_name",
+      first: "first_name",
+      fname: "first_name",
+      lastname: "last_name",
+      last: "last_name",
+      lname: "last_name",
+      name: "name", // Legacy support
+      fullname: "name", // Legacy support
       companyname: "company",
       company: "company",
       linkedin: "linkedin_url",
@@ -241,3 +253,4 @@ export function downloadCSV(content: string, filename: string) {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+

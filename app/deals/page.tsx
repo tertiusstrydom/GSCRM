@@ -352,8 +352,10 @@ export default function DealsPage() {
     document.getElementById("deal-form")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const contactName = (contactId: string) =>
-    contacts.find((c) => c.id === contactId)?.name ?? "Unknown contact";
+  const contactName = (contactId: string) => {
+    const contact = contacts.find((c) => c.id === contactId);
+    return contact ? `${contact.first_name}${contact.last_name ? ` ${contact.last_name}` : ""}` : "Unknown contact";
+  };
 
   const clearFilters = () => {
     setSearchQuery("");

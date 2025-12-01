@@ -118,6 +118,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   if (isLoginPage) {
     return (
       <html lang="en">
+        <head>
+          <link rel="icon" href="/favicon.ico" sizes="any" />
+          <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
+          <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />
+          <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        </head>
         <body className="min-h-screen bg-slate-50 text-slate-900">
           {children}
         </body>
@@ -129,6 +135,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   if (loading) {
     return (
       <html lang="en">
+        <head>
+          <link rel="icon" href="/favicon.ico" sizes="any" />
+          <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
+          <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />
+          <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        </head>
         <body className="min-h-screen bg-slate-50 text-slate-900">
           <div className="flex min-h-screen items-center justify-center">
             <p className="text-sm text-slate-500">Loading...</p>
@@ -141,6 +153,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   // Show app with sidebar
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
+        <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+      </head>
       <body className="min-h-screen bg-slate-50 text-slate-900">
         <div className="flex min-h-screen">
           <aside className="flex w-64 flex-col border-r border-slate-200 bg-white px-4 py-6 max-md:fixed max-md:inset-y-0 max-md:z-20 max-md:w-60">

@@ -52,3 +52,4 @@ Your Supabase project URL: `https://xnyszubcycvvdkznltcu.supabase.co`
 
 Get your keys from: https://supabase.com/dashboard/project/xnyszubcycvvdkznltcu/settings/api
 
+

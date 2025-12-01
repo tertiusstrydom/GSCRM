@@ -11,6 +11,7 @@ import type {
   DealStage
 } from "@/lib/types";
 import { downloadCSV } from "./csv-utils";
+import { getContactFullName } from "./contact-utils";
 
 // Format date to YYYY-MM-DD
 export function formatDate(date: string | null | undefined): string {
@@ -191,7 +192,9 @@ export function exportContactsToCSV(
   selectedFields: string[]
 ): string {
   const allFields = [
-    { key: "name", label: "Name" },
+    { key: "first_name", label: "First Name" },
+    { key: "last_name", label: "Last Name" },
+    { key: "name", label: "Full Name", formatter: (contact: Contact) => getContactFullName(contact) },
     { key: "email", label: "Email" },
     { key: "phone_number", label: "Phone Number" },
     { key: "companies.name", label: "Company Name" },
@@ -270,14 +273,16 @@ export function exportCompaniesToCSV(
 // Export deals to CSV
 export function exportDealsToCSV(
   deals: (Deal & {
-    contacts?: { name: string } | null;
+    contacts?: Contact | null;
     companies?: { name: string } | null;
   })[],
   selectedFields: string[]
 ): string {
   const allFields = [
     { key: "title", label: "Title" },
-    { key: "contacts.name", label: "Contact Name" },
+    { key: "contacts.first_name", label: "Contact First Name" },
+    { key: "contacts.last_name", label: "Contact Last Name" },
+    { key: "contacts.name", label: "Contact Full Name", formatter: (deal: Deal & { contacts?: Contact | null }) => deal.contacts ? getContactFullName(deal.contacts) : "" },
     { key: "companies.name", label: "Company Name" },
     { key: "amount", label: "Amount", formatter: formatCurrency },
     {
@@ -300,7 +305,7 @@ export function exportDealsToCSV(
 // Export tasks to CSV
 export function exportTasksToCSV(
   tasks: (Task & {
-    contacts?: { name: string } | null;
+    contacts?: Contact | null;
     companies?: { name: string } | null;
     deals?: { title: string } | null;
   })[],
@@ -313,7 +318,9 @@ export function exportTasksToCSV(
     { key: "completed", label: "Completed", formatter: formatBoolean },
     { key: "completed_at", label: "Completed At", formatter: formatDate },
     { key: "priority", label: "Priority" },
-    { key: "contacts.name", label: "Contact Name" },
+    { key: "contacts.first_name", label: "Contact First Name" },
+    { key: "contacts.last_name", label: "Contact Last Name" },
+    { key: "contacts.name", label: "Contact Full Name", formatter: (task: Task & { contacts?: Contact | null }) => task.contacts ? getContactFullName(task.contacts) : "" },
     { key: "companies.name", label: "Company Name" },
     { key: "deals.title", label: "Deal Title" },
     { key: "owner", label: "Owner" },
@@ -327,7 +334,7 @@ export function exportTasksToCSV(
 // Export activities to CSV
 export function exportActivitiesToCSV(
   activities: (Activity & {
-    contacts?: { name: string } | null;
+    contacts?: Contact | null;
     companies?: { name: string } | null;
     deals?: { title: string } | null;
   })[],
@@ -344,7 +351,9 @@ export function exportActivitiesToCSV(
       label: "Outcome",
       formatter: formatActivityOutcome
     },
-    { key: "contacts.name", label: "Contact Name" },
+    { key: "contacts.first_name", label: "Contact First Name" },
+    { key: "contacts.last_name", label: "Contact Last Name" },
+    { key: "contacts.name", label: "Contact Full Name", formatter: (activity: Activity & { contacts?: Contact | null }) => activity.contacts ? getContactFullName(activity.contacts) : "" },
     { key: "companies.name", label: "Company Name" },
     { key: "deals.title", label: "Deal Title" },
     { key: "owner", label: "Owner" },
@@ -367,4 +376,5 @@ export function downloadCSVWithMetadata(
   const finalContent = metadataRow + csvContent;
   downloadCSV(finalContent, filename);
 }
+
 

@@ -81,7 +81,7 @@ export async function mergeContacts(
   await supabase.from("activities").insert({
     type: "note",
     title: "Contact Merged",
-    description: `Merged with duplicate contact: ${mergedData.name || "Unknown"}`,
+    description: `Merged with duplicate contact: ${mergedData.first_name ? `${mergedData.first_name}${mergedData.last_name ? ` ${mergedData.last_name}` : ""}` : "Unknown"}`,
     activity_date: new Date().toISOString(),
     contact_id: primaryId,
     created_by: user.email || user.id
@@ -170,3 +170,4 @@ export async function mergeCompanies(
     created_by: user.email || user.id
   });
 }
+

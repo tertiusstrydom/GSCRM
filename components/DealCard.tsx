@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Deal, Contact } from "@/lib/types";
+import { getContactFullName } from "@/lib/contact-utils";
 
 type DealCardProps = {
   deal: Deal;
@@ -88,7 +89,7 @@ export function DealCard({
       {/* Contact/Company */}
       {contact && (
         <div className="mt-2 text-xs text-slate-600">
-          <p className="truncate">{contact.name}</p>
+          <p className="truncate">{getContactFullName(contact)}</p>
           {contact.company && (
             <p className="truncate text-slate-500">{contact.company}</p>
           )}
@@ -170,3 +171,4 @@ export function DealCard({
     </div>
   );
 }
+

@@ -9,6 +9,7 @@ import { TagBadge } from "@/components/TagBadge";
 import { LifecycleStageBadge } from "@/components/LifecycleStageBadge";
 import { ActivityTimeline } from "@/components/ActivityTimeline";
 import { ActivityModal } from "@/components/ActivityModal";
+import { getContactFullName } from "@/lib/contact-utils";
 
 type ContactWithCompanyAndTags = Contact & {
   companies?: { name: string } | null;
@@ -107,7 +108,7 @@ export default function ContactDetailPage() {
             / Details
           </p>
           <h1 className="mt-1 text-xl font-semibold tracking-tight">
-            {contact?.name || "Contact"}
+            {contact ? getContactFullName(contact) : "Contact"}
           </h1>
         </div>
       </div>

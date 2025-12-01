@@ -22,10 +22,12 @@ import {
   normalizeEmail
 } from "@/lib/duplicate-utils";
 import type { Contact as ContactType } from "@/lib/types";
+import { getContactFullName, splitFullName } from "@/lib/contact-utils";
 
 type FormState = {
   id?: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   phone: string;
   phone_number: string;
@@ -74,7 +76,8 @@ export default function ContactsPage() {
   const [search, setSearch] = useState("");
   const [selectedTagFilter, setSelectedTagFilter] = useState<string>("");
   const [form, setForm] = useState<FormState>({
-    name: "",
+    first_name: "",
+    last_name: "",
     email: "",
     phone: "",
     phone_number: "",
@@ -140,7 +143,9 @@ export default function ContactsPage() {
       const q = search.toLowerCase();
       result = result.filter(
         (c) =>
-          c.name.toLowerCase().includes(q) ||
+          (c.first_name?.toLowerCase() || "").includes(q) ||
+          (c.last_name?.toLowerCase() || "").includes(q) ||
+          getContactFullName(c).toLowerCase().includes(q) ||
           (c.companies?.name ?? c.company ?? "").toLowerCase().includes(q) ||
           (c.email ?? "").toLowerCase().includes(q)
       );
@@ -230,8 +235,8 @@ export default function ContactsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) {
-      alert("Name is required");
+    if (!form.first_name.trim()) {
+      alert("First name is required");
       return;
     }
     if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) {
@@ -260,7 +265,8 @@ export default function ContactsPage() {
       }
 
       const payload: any = {
-        name: form.name.trim(),
+        first_name: form.first_name.trim(),
+        last_name: form.last_name.trim() || null,
         email: form.email || null,
         phone: form.phone || null,
         phone_number: form.phone_number || null,
@@ -429,7 +435,8 @@ export default function ContactsPage() {
   const handleEdit = (contact: ContactWithCompany) => {
     setForm({
       id: contact.id,
-      name: contact.name,
+      first_name: contact.first_name || "",
+      last_name: contact.last_name || "",
       email: contact.email ?? "",
       phone: contact.phone ?? "",
       phone_number: contact.phone_number ?? "",
@@ -666,7 +673,7 @@ export default function ContactsPage() {
                           href={`/contacts/${contact.id}`}
                           className="font-medium text-slate-900 hover:underline"
                         >
-                          {contact.name}
+                          {getContactFullName(contact)}
                         </Link>
                         {contact.linkedin_url && (
                           <a
@@ -731,16 +738,31 @@ export default function ContactsPage() {
               {form.id ? "Edit contact" : "Add new contact"}
             </h2>
             <form onSubmit={handleSubmit} className="mt-3 space-y-3 text-sm">
-              <div>
-                <label className="block text-xs font-medium text-slate-700">
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                />
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700">
+                    First Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={form.first_name}
+                    onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                    placeholder="John"
+                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    value={form.last_name}
+                    onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                    placeholder="Doe"
+                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -774,10 +796,10 @@ export default function ContactsPage() {
                 <DuplicateWarning
                   show={true}
                   checking={checkingDuplicate}
-                  message={`A contact with this email already exists: ${duplicateContact.name}`}
+                  message={`A contact with this email already exists: ${getContactFullName(duplicateContact)}`}
                   duplicateRecord={{
                     id: duplicateContact.id,
-                    name: duplicateContact.name,
+                    name: getContactFullName(duplicateContact),
                     entityType: "contact",
                     companyName: (duplicateContact as ContactWithCompany).companies?.name || duplicateContact.company || undefined
                   }}

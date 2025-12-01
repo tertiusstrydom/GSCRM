@@ -177,7 +177,7 @@ export default function ActivitiesPage() {
           `"${date}"`,
           a.duration_minutes || "",
           a.outcome || "",
-          contact?.name || "",
+          contact ? `${contact.first_name}${contact.last_name ? ` ${contact.last_name}` : ""}` : "",
           company?.name || "",
           deal?.title || "",
           a.created_by,

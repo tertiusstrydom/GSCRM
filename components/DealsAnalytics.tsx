@@ -112,3 +112,4 @@ export function DealsAnalytics({ deals, loading = false }: DealsAnalyticsProps) 
     </div>
   );
 }
+
