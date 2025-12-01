@@ -231,6 +231,18 @@ export default function ContactDetailPage() {
                     </dd>
                   </div>
                 )}
+                {contact.country && (
+                  <div>
+                    <dt className="text-xs font-medium text-slate-500">Country</dt>
+                    <dd className="mt-1 text-slate-800">{contact.country}</dd>
+                  </div>
+                )}
+                {contact.state && (
+                  <div>
+                    <dt className="text-xs font-medium text-slate-500">State/Province</dt>
+                    <dd className="mt-1 text-slate-800">{contact.state}</dd>
+                  </div>
+                )}
                 <div>
                   <dt className="text-xs font-medium text-slate-500">LinkedIn</dt>
                   <dd className="mt-1 text-slate-800">

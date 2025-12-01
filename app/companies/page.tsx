@@ -37,6 +37,8 @@ type FormState = {
   phone_number: string;
   annual_revenue: string;
   company_size: string;
+  country: string;
+  state: string;
   lifecycle_stage: LifecycleStage | "";
   lead_source: LeadSource | "";
   last_contact_date: string;
@@ -85,6 +87,8 @@ export default function CompaniesPage() {
     phone_number: "",
     annual_revenue: "",
     company_size: "",
+    country: "",
+    state: "",
     lifecycle_stage: "",
     lead_source: "",
     last_contact_date: "",
@@ -219,6 +223,8 @@ export default function CompaniesPage() {
       phone_number: "",
       annual_revenue: "",
       company_size: "",
+      country: "",
+      state: "",
       lifecycle_stage: "",
       lead_source: "",
       last_contact_date: "",
@@ -275,6 +281,8 @@ export default function CompaniesPage() {
         notes: form.notes.trim() || null,
         linkedin_url: form.linkedin_url.trim() || null,
         phone_number: form.phone_number.trim() || null,
+        country: form.country.trim() || null,
+        state: form.state.trim() || null,
         lifecycle_stage: form.lifecycle_stage || null,
         lead_source: form.lead_source || null,
         last_contact_date: form.last_contact_date || null,
@@ -408,6 +416,8 @@ export default function CompaniesPage() {
       phone_number: company.phone_number ?? "",
       annual_revenue: company.annual_revenue?.toString() ?? "",
       company_size: company.company_size?.toString() ?? "",
+      country: company.country ?? "",
+      state: company.state ?? "",
       lifecycle_stage: company.lifecycle_stage ?? "",
       lead_source: company.lead_source ?? "",
       last_contact_date: company.last_contact_date ?? "",
@@ -782,6 +792,30 @@ export default function CompaniesPage() {
                     value={form.linkedin_url}
                     onChange={(e) => setForm({ ...form, linkedin_url: e.target.value })}
                     placeholder="https://linkedin.com/company/..."
+                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700">
+                    Country
+                  </label>
+                  <input
+                    type="text"
+                    value={form.country}
+                    onChange={(e) => setForm({ ...form, country: e.target.value })}
+                    placeholder="e.g., United States, Canada"
+                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700">
+                    State/Province
+                  </label>
+                  <input
+                    type="text"
+                    value={form.state}
+                    onChange={(e) => setForm({ ...form, state: e.target.value })}
+                    placeholder="e.g., California, Ontario"
                     className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>

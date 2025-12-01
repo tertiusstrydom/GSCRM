@@ -281,14 +281,28 @@ function ImportPageContent() {
       if (importOptions.skipMissingRequired) {
         for (const requiredField of requiredFields) {
           const value = rowData[requiredField];
-          if (!value || (typeof value === "string" && value.trim() === "")) {
+          const isEmpty = !value || (typeof value === "string" && value.trim() === "");
+          
+          if (isEmpty) {
             shouldSkip = true;
-            skipReason = `Row ${i + 2}: Missing required field '${requiredField}'`;
+            // Find which CSV column should map to this field
+            const mappedColumn = Object.keys(mapping).find(h => mapping[h] === requiredField);
+            const fieldLabel = availableFields.find(f => f.field === requiredField)?.label || requiredField;
+            
+            if (mappedColumn) {
+              skipReason = `Row ${i + 2}: Missing required field '${fieldLabel}' (CSV column '${mappedColumn}' is empty or not mapped)`;
+            } else {
+              skipReason = `Row ${i + 2}: Missing required field '${fieldLabel}' (no CSV column mapped to this field)`;
+            }
+            
             console.log(`Validation failed for row ${i + 2}:`, {
               requiredField,
+              fieldLabel,
+              mappedColumn,
               value,
               rowData,
-              mapping
+              mapping,
+              csvRow: row
             });
             break;
           }
@@ -300,7 +314,7 @@ function ImportPageContent() {
         errors.push({
           row: i + 2,
           data: row,
-          reason: skipReason
+          reason: skipReason || `Row ${i + 2}: Validation failed`
         });
         continue;
       }
@@ -829,10 +843,33 @@ function ImportPageContent() {
                     Download Error Log
                   </button>
                 </div>
-                <div className="max-h-64 overflow-y-auto rounded-lg border border-slate-200">
+                <div className="max-h-96 overflow-y-auto rounded-lg border border-slate-200">
                   <table className="min-w-full divide-y divide-slate-200 text-xs">
-                    <thead className="bg-slate-50">
+                    <thead className="bg-slate-50 sticky top-0">
                       <tr>
+                        <th className="px-3 py-2 text-left font-semibold text-slate-700">Row</th>
+                        <th className="px-3 py-2 text-left font-semibold text-slate-700">Error Reason</th>
+                        <th className="px-3 py-2 text-left font-semibold text-slate-700">Data Preview</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 bg-white">
+                      {importResult.errors.map((error, idx) => (
+                        <tr key={idx} className="hover:bg-red-50">
+                          <td className="px-3 py-2 font-medium text-red-700">{error.row}</td>
+                          <td className="px-3 py-2 text-red-700">{error.reason}</td>
+                          <td className="px-3 py-2 text-slate-600">
+                            <details className="cursor-pointer">
+                              <summary className="text-xs text-slate-500 hover:text-slate-700">View data</summary>
+                              <pre className="mt-2 max-h-32 overflow-auto rounded bg-slate-50 p-2 text-[10px]">
+                                {JSON.stringify(error.data, null, 2)}
+                              </pre>
+                            </details>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
                         <th className="px-3 py-2 text-left font-semibold text-slate-700">
                           Row
                         </th>

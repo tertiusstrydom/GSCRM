@@ -40,6 +40,8 @@ export type Company = {
   lead_source: LeadSource | null;
   last_contact_date: string | null;
   owner: string | null;
+  country: string | null;
+  state: string | null;
   user_id: string;
   is_merged?: boolean;
 };
@@ -56,6 +58,8 @@ export type Contact = {
   job_title: string | null;
   company_website: string | null;
   company_headcount: number | null;
+  country: string | null;
+  state: string | null;
   notes: string | null;
   created_at: string | null;
   linkedin_url: string | null;

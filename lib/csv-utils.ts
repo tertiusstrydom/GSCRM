@@ -12,6 +12,8 @@ export type ContactField =
   | "job_title"
   | "company_website"
   | "company_headcount"
+  | "country"
+  | "state"
   | "linkedin_url"
   | "lifecycle_stage"
   | "lead_source"
@@ -27,6 +29,8 @@ export type CompanyField =
   | "linkedin_url"
   | "annual_revenue"
   | "company_size"
+  | "country"
+  | "state"
   | "lifecycle_stage"
   | "lead_source"
   | "notes"
@@ -47,6 +51,8 @@ export const CONTACT_FIELDS: {
   { field: "job_title", label: "Job Title", required: false },
   { field: "company_website", label: "Company Website", required: false },
   { field: "company_headcount", label: "Company Headcount", required: false },
+  { field: "country", label: "Country", required: false },
+  { field: "state", label: "State/Province", required: false },
   { field: "linkedin_url", label: "LinkedIn URL", required: false },
   {
     field: "lifecycle_stage",
@@ -78,6 +84,8 @@ export const COMPANY_FIELDS: {
   { field: "linkedin_url", label: "LinkedIn URL", required: false },
   { field: "annual_revenue", label: "Annual Revenue", required: false },
   { field: "company_size", label: "Company Size", required: false },
+  { field: "country", label: "Country", required: false },
+  { field: "state", label: "State/Province", required: false },
   {
     field: "lifecycle_stage",
     label: "Lifecycle Stage",
@@ -160,6 +168,10 @@ export function autoMapFields(
       company_size: "company_headcount",
       numofemployees: "company_headcount",
       employee_count: "company_headcount",
+      country: "country",
+      state: "state",
+      province: "state",
+      region: "state",
       linkedin: "linkedin_url",
       linkedinurl: "linkedin_url",
       linkedin_url: "linkedin_url",

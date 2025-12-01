@@ -202,6 +202,8 @@ export function exportContactsToCSV(
     { key: "job_title", label: "Job Title" },
     { key: "company_website", label: "Company Website" },
     { key: "company_headcount", label: "Company Headcount" },
+    { key: "country", label: "Country" },
+    { key: "state", label: "State/Province" },
     { key: "linkedin_url", label: "LinkedIn URL" },
     {
       key: "lifecycle_stage",
@@ -245,6 +247,8 @@ export function exportCompaniesToCSV(
     { key: "linkedin_url", label: "LinkedIn URL" },
     { key: "annual_revenue", label: "Annual Revenue", formatter: formatCurrency },
     { key: "company_size", label: "Company Size" },
+    { key: "country", label: "Country" },
+    { key: "state", label: "State/Province" },
     {
       key: "lifecycle_stage",
       label: "Lifecycle Stage",
